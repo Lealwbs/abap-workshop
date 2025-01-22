@@ -5,31 +5,33 @@
 *&---------------------------------------------------------------------*
 REPORT z08_exerc1_2.
 
+DATA: v_counter_l1      TYPE i,
+      v_counter_l2      TYPE i,
+      v_sum_list        TYPE i,
+      v_list_sum_itens  TYPE i,
+      v_list_qtde_itens TYPE i,
+      v_media           TYPE i,
+      v_multiplicacao   TYPE i.
+
+PARAMETERS: v_num1 TYPE i OBLIGATORY,
+v_num2 TYPE i OBLIGATORY.
+
 START-OF-SELECTION.
-
-  PARAMETERS: v_num1 TYPE i OBLIGATORY,
-              v_num2 TYPE i OBLIGATORY.
-
-  DATA: v_counter_l1      TYPE i,
-        v_counter_l2      TYPE i,
-        v_sum_list        TYPE i,
-        v_list_sum_itens  TYPE i,
-        v_list_qtde_itens TYPE i,
-        v_media           TYPE i,
-        v_multiplicacao   TYPE i.
-
 
 END-OF-SELECTION.
 
   IF v_num1 <= 0 OR v_num2 <= 0.
+    WRITE:/ 'ERRO: Número Inválido, digite somente números maiores que zero'.
     STOP.
   ENDIF.
 
   IF v_num1 >= v_num2.
+    WRITE:/ 'ERRO: Primeiro número deve ser menor que o segundo'.
     STOP.
   ENDIF.
 
   IF v_num2 - v_num1 < 5.
+    WRITE:/ 'ERRO: A diferença entre o segundo número e o primeiro número deve ser maior ou igual à 5'.
     STOP.
   ENDIF.
 
