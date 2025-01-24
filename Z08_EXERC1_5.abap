@@ -13,14 +13,20 @@ DATA: v_dt_hoje      TYPE sy-datum,
       v_dias_no_mes  TYPE i,
       v_data_temp    TYPE sy-datum.
 
-PARAMETERS: v_dt_ini TYPE sy-datum OBLIGATORY,
-            v_dt_fim TYPE sy-datum,
-            v_radio1 RADIOBUTTON GROUP rdgp DEFAULT 'X',
-            v_radio2 RADIOBUTTON GROUP rdgp,
-            v_radio3 RADIOBUTTON GROUP rdgp,
-            v_check1 AS CHECKBOX,
-            v_check2 AS CHECKBOX,
-            v_check3 AS CHECKBOX.
+SELECTION-SCREEN BEGIN OF BLOCK datas WITH FRAME TITLE TEXT-001.
+  PARAMETERS: v_dt_ini TYPE sy-datum OBLIGATORY,
+              v_dt_fim TYPE sy-datum.
+SELECTION-SCREEN END OF BLOCK datas.
+
+SELECTION-SCREEN BEGIN OF BLOCK radios WITH FRAME TITLE TEXT-002.
+  PARAMETERS:
+    v_radio1 RADIOBUTTON GROUP rdgp DEFAULT 'X',
+    v_radio2 RADIOBUTTON GROUP rdgp,
+    v_radio3 RADIOBUTTON GROUP rdgp,
+    v_check1 AS CHECKBOX,
+    v_check2 AS CHECKBOX,
+    v_check3 AS CHECKBOX.
+SELECTION-SCREEN END OF BLOCK radios.
 
 INITIALIZATION.
   v_dt_hoje = sy-datum.
@@ -143,7 +149,7 @@ END-OF-SELECTION.
       PERFORM retornar_data USING v_data_temp 2 CHANGING v_dia_temp v_mes_temp v_ano_temp.
 
       DO v_dias_no_mes TIMES.
-        WRITE: / sy-index, 'de', v_mes_temp, 'de', v_ano_temp.
+        WRITE: / |{ sy-index } de { v_mes_temp } de { v_ano_temp }.|.
       ENDDO.
 
     ENDDO.
@@ -151,6 +157,6 @@ END-OF-SELECTION.
 
   IF v_check3 = 'X'.
     IF v_ano_ini MOD 4 = 0 AND v_ano_ini MOD 100 <> 0.
-      WRITE: / v_dt_ini+0(4), 'é ano bissexto'.
+      WRITE: / |{ v_dt_ini+0(4) } é ano bissexto.|.
     ENDIF.
   ENDIF.
