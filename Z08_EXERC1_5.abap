@@ -150,6 +150,7 @@ END-OF-SELECTION.
 
       DO v_dias_no_mes TIMES.
         WRITE: / |{ sy-index } de { v_mes_temp } de { v_ano_temp }.|.
+*        WRITE: / sy-index, 'de' , v_mes_temp, 'de', v_ano_temp.
       ENDDO.
 
     ENDDO.
