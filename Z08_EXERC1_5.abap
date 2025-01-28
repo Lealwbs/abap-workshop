@@ -90,26 +90,30 @@ END-OF-SELECTION.
 
     IF v_radio1 = 'X'. " 01/JAN/2017
       PERFORM retornar_data USING v_dt_ini 1 CHANGING v_dia_temp v_mes_temp v_ano_temp.
-      WRITE: / 'Início:', v_dia_temp, '/', v_mes_temp, '/', v_ano_temp.
+*      WRITE: / 'Início:', v_dia_temp, '/', v_mes_temp, '/', v_ano_temp.
+      WRITE: / |Início: { v_dia_temp }/{ v_mes_temp }/{ v_ano_temp }.|.
       IF v_dt_fim <> '00000000'.
         PERFORM retornar_data USING v_dt_fim 1 CHANGING v_dia_temp v_mes_temp v_ano_temp.
-        WRITE: / 'Término:', v_dia_temp, '/', v_mes_temp, '/', v_ano_temp.
+*        WRITE: / 'Término:', v_dia_temp, '/', v_mes_temp, '/', v_ano_temp.
+        WRITE: / |Término: { v_dia_temp }/{ v_mes_temp }/{ v_ano_temp }.|.
       ENDIF.
 
     ELSEIF v_radio2 = 'X'. " 01 de Janeiro de 2017
       PERFORM retornar_data USING v_dt_ini 2 CHANGING v_dia_temp v_mes_temp v_ano_temp.
-      WRITE: / 'Início:', v_dia_temp, 'de', v_mes_temp, 'de', v_ano_temp.
+*      WRITE: / 'Início:', v_dia_temp, 'de', v_mes_temp, 'de', v_ano_temp.
+      WRITE: / |Início: { v_dia_temp } de { v_mes_temp } de { v_ano_temp }.|.
       IF v_dt_fim <> '00000000'.
         PERFORM retornar_data USING v_dt_fim 2 CHANGING v_dia_temp v_mes_temp v_ano_temp.
-        WRITE: / 'Término:', v_dia_temp, 'de', v_mes_temp, 'de', v_ano_temp.
+*        WRITE: / 'Término:', v_dia_temp, 'de', v_mes_temp, 'de', v_ano_temp.
+        WRITE: / |Término: { v_dia_temp } de { v_mes_temp } de { v_ano_temp }.|.
       ENDIF.
 
     ELSEIF v_radio3 = 'X'. " 01-jan-2017
       PERFORM retornar_data USING v_dt_ini 3 CHANGING v_dia_temp v_mes_temp v_ano_temp.
-      WRITE: / 'Início:', v_dia_temp, '-', v_mes_temp, '-', v_ano_temp.
+      WRITE: / |Início: { v_dia_temp }-{ v_mes_temp }-{ v_ano_temp }.|.
       IF v_dt_fim <> '00000000'.
         PERFORM retornar_data USING v_dt_fim 3 CHANGING v_dia_temp v_mes_temp v_ano_temp.
-        WRITE: / 'Término:', v_dia_temp, '-', v_mes_temp, '-', v_ano_temp.
+        WRITE: / |Término: { v_dia_temp }-{ v_mes_temp }-{ v_ano_temp }.|.
       ENDIF.
     ENDIF.
 
@@ -153,11 +157,15 @@ END-OF-SELECTION.
 *        WRITE: / sy-index, 'de' , v_mes_temp, 'de', v_ano_temp.
       ENDDO.
 
+      IF sy-index <> '12'.
+        WRITE: /.
+      ENDIF.
+
     ENDDO.
   ENDIF.
 
   IF v_check3 = 'X'.
     IF v_ano_ini MOD 4 = 0 AND v_ano_ini MOD 100 <> 0.
-      WRITE: / |{ v_dt_ini+0(4) } é ano bissexto.|.
+      WRITE: /, / |{ v_dt_ini+0(4) } é ano bissexto.|.
     ENDIF.
   ENDIF.

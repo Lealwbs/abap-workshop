@@ -12,35 +12,33 @@ SELECTION-SCREEN END OF BLOCK b_query.
 AT SELECTION-SCREEN.
 
   IF v_idclnt < 1.
-    MESSAGE e008(z08).
+    MESSAGE e008(z08). "ID inválido, digite um ID positivo válido.
   ENDIF.
 
 START-OF-SELECTION.
 
   TYPES: BEGIN OF s_user,
-           nome   TYPE c LENGTH 20,
-           cidade TYPE c LENGTH 20,
-           idioma TYPE c LENGTH 1,
+           nome   TYPE scustom-name,
+           cidade TYPE scustom-city,
+           idioma TYPE scustom-langu,
          END OF s_user.
-
 
   DATA: v_utmp TYPE s_user.
 
-  SELECT SINGLE name, city, langu
-        FROM scustom
-        INTO @v_utmp
-        WHERE id = @v_idclnt.
-
 END-OF-SELECTION.
 
+  SELECT SINGLE name city langu
+        FROM scustom
+        INTO v_utmp
+        WHERE id = v_idclnt.
   IF sy-subrc = 0. " Se sy-subrc=0: QuerySem erros
     WRITE: / |Nome: { v_utmp-nome } |,
            / |Cidade: { v_utmp-cidade }|,
-           / |Idioma: { v_utmp-idioma } |.
+           " / |Idioma: { v_utmp-idioma }|. * Retorna incorretamente o resultado de v_utmp-idioma
+           / |Idioma:|, v_utmp-idioma.
   ELSE.
     WRITE: |Cliente { v_idclnt } não encontrado.|.
   ENDIF.
 
-* O valor listado pelo meu programa é diferente do listado na tabela SCUSTOM pois
-* meu programa não efetua uma rotina de conversão no idioma, enquanto a tabela já executa.
-* Ou seja, em meu programa o Idioma sairia como "E" ao invés de "EN" ou "Inglês".
+* O valor v_utmp-idioma quando impresso entre |v_utmp-idioma| mostra apenas 1 letra,
+* mas quando é usado como argumento seperado da função WRITE:, ele mostra 2 letras normalmente.
