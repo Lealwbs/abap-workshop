@@ -68,9 +68,9 @@ INITIALIZATION.
   p_fldate = sy-datum.
 
 * """ INICIALIZAÇÃO RÁPIDA, PARA FACILITAR OS TESTES """
-  p_carrid = 'AB'.
-  p_connid = '017'.
-  p_fldate = '20250209'.
+  p_carrid = 'DL'.
+  p_connid = '0106'.
+  p_fldate = '20240813'.
   p_bookid = '95'.
 * """ APÓS OS TESTES, O BLOCO ACIMA DEVE SER COMENTADO NOVAMENTE """
 
@@ -85,7 +85,7 @@ START-OF-SELECTION.
   SELECT SINGLE carrid connid countryfr cityfrom countryto cityto fltime airpfrom airpto
   FROM spfli
   INTO v_l_spfli
-  WHERE connid = p_connid.
+  WHERE carrid = p_carrid AND connid = p_connid.
   v_idquery_connid = sy-subrc.
 
   "Buscar os 2 últimos elementos (Nome do Aeroporto de Origem e Nome do Aeroporto de Destino).
@@ -95,7 +95,7 @@ START-OF-SELECTION.
   SELECT SINGLE carrid connid fldate price currency planetype
   FROM sflight
   INTO v_l_sflight
-  WHERE fldate = p_fldate.
+  WHERE carrid = p_carrid AND connid = p_connid AND fldate = p_fldate.
   v_idquery_fldate = sy-subrc.
 
   "Buscar os 2 últimos elementos (Velocidade de cruzeiro e Fabricante do avião).
@@ -105,7 +105,7 @@ START-OF-SELECTION.
   SELECT SINGLE carrid connid fldate bookid customid luggweight
   FROM sbook
   INTO v_l_sbook
-  WHERE bookid = p_bookid.
+  WHERE carrid = p_carrid AND connid = p_connid AND fldate = p_fldate AND bookid = p_bookid.
   v_idquery_bookid = sy-subrc.
 
 END-OF-SELECTION.
