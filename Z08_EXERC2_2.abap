@@ -6,43 +6,43 @@
 REPORT z08_exerc2_2.
 
 TYPES: BEGIN OF tp_l_scarr,
-         vtp_CARRID   TYPE scarr-carrid,   "PK  "código da cia aérea
-         vtp_CARRNAME TYPE scarr-carrname,      "nome
-         vtp_URL      TYPE scarr-url,           "site
+         vtp_CARRID   TYPE scarr-carrid,         "PK  "código da cia aérea
+         vtp_CARRNAME TYPE scarr-carrname,            "nome
+         vtp_URL      TYPE scarr-url,                 "site
        END OF tp_l_scarr,
 
        BEGIN OF tp_l_spfli,
-         vtp_CARRID        TYPE spfli-carrid,     "código da cia aérea
-         vtp_CONNID        TYPE spfli-connid,     "número do voo
-         vtp_COUNTRYFR     TYPE spfli-countryfr,  "país de origem
-         vtp_CITYFROM      TYPE spfli-cityfrom,   "cidade origem
-         vtp_COUNTRYTO     TYPE spfli-countryto,  "país de destino
-         vtp_CITYTO        TYPE spfli-cityto,     "cidade destino
-         vtp_FLTIME        TYPE spfli-fltime,     "duração do voo
-         vtp_AIRPFROM      TYPE spfli-airpfrom,   "nome do aeroporto de origem
-         vtp_AIRPTO        TYPE spfli-airpto,     "nome do aeroporto de destino
-         vtp_AIRPFROM_NAME TYPE sairport-name,    "nome COMPLETO do aeroporto de origem (VIA SELECT)
-         vtp_AIRPTO_NAME   TYPE sairport-name,    "nome COMPLETO do aeroporto de destino (VIA SELECT)
+         vtp_CARRID        TYPE spfli-carrid,    "PK  "código da cia aérea
+         vtp_CONNID        TYPE spfli-connid,    "PK  "número do voo
+         vtp_COUNTRYFR     TYPE spfli-countryfr,      "país de origem
+         vtp_CITYFROM      TYPE spfli-cityfrom,       "cidade origem
+         vtp_COUNTRYTO     TYPE spfli-countryto,      "país de destino
+         vtp_CITYTO        TYPE spfli-cityto,         "cidade destino
+         vtp_FLTIME        TYPE spfli-fltime,         "duração do voo
+         vtp_AIRPFROM      TYPE spfli-airpfrom,       "nome do aeroporto de origem
+         vtp_AIRPTO        TYPE spfli-airpto,         "nome do aeroporto de destino
+         vtp_AIRPFROM_NAME TYPE sairport-name,        "nome COMPLETO do aeroporto de origem (VIA SELECT)
+         vtp_AIRPTO_NAME   TYPE sairport-name,        "nome COMPLETO do aeroporto de destino (VIA SELECT)
        END OF tp_l_spfli,
 
        BEGIN OF tp_l_sflight,
-         vtp_CARRID    TYPE sflight-carrid,      "código da cia aérea
-         vtp_CONNID    TYPE sflight-connid, "PK  "número do voo
-         vtp_FLDATE    TYPE sflight-fldate,      "data do voo
-         vtp_PRICE     TYPE sflight-price,       "preço
-         vtp_CURRENCY  TYPE sflight-currency,    "moeda do voo
-         vtp_PLANETYPE TYPE sflight-planetype,   "tipo de avião
-         vtp_OP_SPEED  TYPE saplane-op_speed,    "velocidade de cruzeiro(VIA SELECT)
-         vtp_PRODUCER  TYPE saplane-producer,    "fabricante do avião (VIA SELECT)
+         vtp_CARRID    TYPE sflight-carrid,      "PK  "código da cia aérea
+         vtp_CONNID    TYPE sflight-connid,      "PK  "número do voo
+         vtp_FLDATE    TYPE sflight-fldate,      "PK  "data do voo
+         vtp_PRICE     TYPE sflight-price,            "preço
+         vtp_CURRENCY  TYPE sflight-currency,         "moeda do voo
+         vtp_PLANETYPE TYPE sflight-planetype,        "tipo de avião
+         vtp_OP_SPEED  TYPE saplane-op_speed,         "velocidade de cruzeiro(VIA SELECT)
+         vtp_PRODUCER  TYPE saplane-producer,         "fabricante do avião (VIA SELECT)
        END OF tp_l_sflight,
 
        BEGIN OF tp_l_sbook,
-         vtp_CARRID     TYPE sbook-carrid,      "código da cia aérea
-         vtp_CONNID     TYPE sbook-connid,      "número do voo
-         vtp_FLDATE     TYPE sbook-fldate,      "data do voo
-         vtp_BOOKID     TYPE sbook-bookid, "PK  "número da reserva
-         vtp_CUSTOMID   TYPE sbook-customid,    "número do passageiro
-         vtp_LUGGWEIGHT TYPE sbook-luggweight,  "peso da bagagem (KG)
+         vtp_CARRID     TYPE sbook-carrid,       "PK  "código da cia aérea
+         vtp_CONNID     TYPE sbook-connid,       "PK  "número do voo
+         vtp_FLDATE     TYPE sbook-fldate,       "PK  "data do voo
+         vtp_BOOKID     TYPE sbook-bookid,       "PK  "número da reserva
+         vtp_CUSTOMID   TYPE sbook-customid,          "número do passageiro
+         vtp_LUGGWEIGHT TYPE sbook-luggweight,        "peso da bagagem (KG)
        END OF tp_l_sbook.
 
 DATA:
@@ -72,7 +72,7 @@ INITIALIZATION.
   p_connid = '0106'.
   p_fldate = '20240813'.
   p_bookid = '95'.
-* """ APÓS OS TESTES, O BLOCO ACIMA DEVE SER COMENTADO NOVAMENTE """
+* """ APÓS OS TESTES, O BLOCO ACIMA DEVE SER APAGADO/COMENTADO NOVAMENTE """
 
 START-OF-SELECTION.
 
@@ -89,8 +89,13 @@ START-OF-SELECTION.
   v_idquery_connid = sy-subrc.
 
   "Buscar os 2 últimos elementos (Nome do Aeroporto de Origem e Nome do Aeroporto de Destino).
-  SELECT SINGLE name FROM sairport INTO v_l_spfli-vtp_AIRPFROM_NAME WHERE id = v_l_spfli-vtp_AIRPFROM.
-  SELECT SINGLE name FROM sairport INTO v_l_spfli-vtp_AIRPTO_NAME WHERE id = v_l_spfli-vtp_AIRPTO.
+  SELECT a~name AS airfrom_name,
+         b~name AS airto_name
+  FROM sairport AS a
+  INNER JOIN sairport AS b
+  ON a~id = @v_l_spfli-vtp_AIRPFROM AND b~id = @v_l_spfli-vtp_AIRPTO
+  INTO (@v_l_spfli-vtp_AIRPFROM_NAME, @v_l_spfli-vtp_AIRPTO_NAME).
+  ENDSELECT.
 
   SELECT SINGLE carrid connid fldate price currency planetype
   FROM sflight
@@ -99,8 +104,10 @@ START-OF-SELECTION.
   v_idquery_fldate = sy-subrc.
 
   "Buscar os 2 últimos elementos (Velocidade de cruzeiro e Fabricante do avião).
-  SELECT SINGLE op_speed FROM saplane INTO v_l_sflight-vtp_OP_SPEED WHERE planetype = v_l_sflight-vtp_PLANETYPE.
-  SELECT SINGLE producer FROM saplane INTO v_l_sflight-vtp_PRODUCER WHERE planetype = v_l_sflight-vtp_PLANETYPE.
+  SELECT SINGLE op_speed producer
+  FROM saplane
+  INTO (v_l_sflight-vtp_OP_SPEED, v_l_sflight-vtp_PRODUCER)
+  WHERE planetype = v_l_sflight-vtp_PLANETYPE.
 
   SELECT SINGLE carrid connid fldate bookid customid luggweight
   FROM sbook
