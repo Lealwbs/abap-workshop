@@ -49,9 +49,9 @@ START-OF-SELECTION.
     INTO @v_peso_tmp
     WHERE carrid = @<carr_line1>-vtp_carrid
       AND fldate IN @v_date
-      AND fldate LIKE '____12__'
-      AND fldate LIKE '____01__'
-      AND fldate LIKE '____07__'.
+      AND ( fldate LIKE '____12__'
+         OR fldate LIKE '____01__'
+         OR fldate LIKE '____07__' ). "Pega os meses 12, 01 e 07.
 
     v_peso_local = 2 * v_peso_tmp.
     CLEAR: v_peso_tmp.
@@ -63,7 +63,7 @@ START-OF-SELECTION.
       AND fldate IN @v_date
       AND fldate NOT LIKE '____12__'
       AND fldate NOT LIKE '____01__'
-      AND fldate NOT LIKE '____07__'.
+      AND fldate NOT LIKE '____07__'. "Pega todos os meses exceto 12, 01 e 07.
 
     v_peso_local += v_peso_tmp.
 

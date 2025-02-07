@@ -24,6 +24,7 @@ DATA: t_individual_flights TYPE TABLE OF tp_l_short_sbook.
 SELECT id name email
   FROM scustom
   INTO TABLE t_passageiro.
+" WHERE id = '4900'.      "Exemplo de teste para passageiro com um único voo.
 
 DATA: v_01_short_sbook TYPE tp_l_short_sbook,
       v_02_short_sbook TYPE tp_l_short_sbook,
@@ -55,15 +56,13 @@ LOOP AT t_passageiro ASSIGNING FIELD-SYMBOL(<line>).
   v_02_short_sbook-vtp_identif = '02'.
   v_02_short_sbook-vtp_fldate = v_02_fldate.
 
+  IF v_01_fldate = v_02_fldate.
+    v_02_short_sbook-vtp_fldate = ''.
+  ENDIF.
+
   IF v_operation_id = 0 AND v_01_fldate <> '00000000'.
-
-    IF v_01_fldate <> v_02_fldate.
-      APPEND: v_01_short_sbook TO t_reserva_passageiro,
-              v_02_short_sbook TO t_reserva_passageiro.
-    ELSEIF v_01_fldate = v_02_fldate.
-      APPEND v_01_short_sbook TO t_reserva_passageiro.
-    ENDIF.
-
+    APPEND: v_01_short_sbook TO t_reserva_passageiro,
+            v_02_short_sbook TO t_reserva_passageiro.
   ELSE.
 *    WRITE: / |Não foi possível localizar o passageiro { <line>-vtp_id }.|.
   ENDIF.
