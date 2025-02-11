@@ -21,3 +21,6 @@ v_l_usuario_rede-ativo        = 'X'.
 
 
 INSERT INTO z08usuario_rede VALUES v_l_usuario_rede.
+
+*TABLE: Z08USUARIO_REDE
+*Código de Transação: ZUSURED_08
