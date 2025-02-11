@@ -1,0 +1,48 @@
+PROGRAMA	TELA	CÓD.	NOME DO CAMPO			VALOR DO CAMPO
+			0000	T		MM02                    BS AA X   F
+SAPLMGMM	0060	X		                        
+			0000	 		BDC_CURSOR              RMMG1-MATNR
+			0000	 		BDC_OKCODE              ENTR
+			0000	 		RMMG1-MATNR             50000112
+SAPLMGMM	0070	X		                        
+			0000	 		BDC_CURSOR              MSICHTAUSW-DYTXT(01)
+			0000	 		BDC_OKCODE              =ENTR
+			0000	 		MSICHTAUSW-KZSEL(01)    X
+SAPLMGMM	4004	X		                        
+			0000	 		BDC_OKCODE              =SP02
+			0000	 		BDC_SUBSCR              SAPLMGMM                                2004TABFRA1
+			0000	 		BDC_SUBSCR              SAPLMGD1                                1002SUB1
+			0000	 		MAKT-MAKTX              MATERIAL TESTE 1
+			0000	 		BDC_SUBSCR              SAPLMGD1                                2001SUB2
+			0000	 		BDC_CURSOR              MARA-BISMT
+			0000	 		MARA-MEINS              UN
+			0000	 		MARA-MATKL              C002
+			0000	 		MARA-BISMT              ABC
+			0000	 		MARA-SPART              60
+			0000	 		MARA-MTPOS_MARA         NORM
+			0000	 		BDC_SUBSCR              SAPLMGD1                                2561SUB3
+			0000	 		BDC_SUBSCR              SAPLMGD1                                2007SUB4
+			0000	 		MARA-GEWEI              KG
+			0000	 		BDC_SUBSCR              SAPLMGD1                                2005SUB5
+			0000	 		BDC_SUBSCR              SAPLMGD1                                2011SUB6
+			0000	 		BDC_SUBSCR              SAPLMGD1                                2033SUB7
+			0000	 		DESC_LANGU_GDTXT        P
+			0000	 		BDC_SUBSCR              SAPLMGD1                                0001SUB8
+			0000	 		BDC_SUBSCR              SAPLMGD1                                0001SUB9
+			0000	 		BDC_SUBSCR              SAPLMGD1                                0001SUB10
+SAPLMGMM	4004	X		                        
+			0000	 		BDC_OKCODE              =BU
+			0000	 		BDC_SUBSCR              SAPLMGMM                                2004TABFRA1
+			0000	 		BDC_SUBSCR              SAPLMGD1                                1002SUB1
+			0000	 		MAKT-MAKTX              MATERIAL TESTE 1
+			0000	 		BDC_SUBSCR              SAPLMGD1                                2002SUB2
+			0000	 		BDC_SUBSCR              SAPLMGD1                                2010SUB3
+			0000	 		BDC_SUBSCR              SAPLLO_SGT_MM                           2016SUB4
+			0000	 		BDC_SUBSCR              SAPLMGD1                                2003SUB5
+			0000	 		BDC_SUBSCR              SAPLMGD1                                2004SUB6
+			0000	 		BDC_CURSOR              MARA-ZEINR
+			0000	 		MARA-ZEINR              DEFGHI
+			0000	 		BDC_SUBSCR              SAPLMGD1                                2499SUB7
+			0000	 		BDC_SUBSCR              SAPLJ_1BFG_BRAZILTAX_MATERIAL           2002SUB8
+			0000	 		BDC_SUBSCR              SAPLFGSCMPRD_DYN                        3011SUB9
+			0000	 		BDC_SUBSCR              SAPLMGD1                                2012SUB10

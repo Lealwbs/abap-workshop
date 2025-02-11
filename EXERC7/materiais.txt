@@ -1,0 +1,4 @@
+codigo_material descricao	numero_antigo	numero_desenho
+50000112	Material Teste 1	ANTIGO001	DESENHO001
+10000592	Material Teste 2	ANTIGO002	DESENHO002
+60005999	Material Teste 3	ANTIGO003	DESENHO003
