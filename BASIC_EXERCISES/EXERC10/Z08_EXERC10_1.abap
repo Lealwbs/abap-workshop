@@ -85,7 +85,7 @@ START-OF-SELECTION.
 
         lo_table->display( ).
 
-        lo_columns->get_column( 'VTP_LUGGWEIGHT' )->set_short_text( 'test1' ).
+        "lo_columns->get_column( 'VTP_LUGGWEIGHT' )->set_short_text( 'test1' ).
 
       CATCH cx_salv_msg        INTO DATA(lx_salv_error).
       CATCH cx_salv_existing   INTO DATA(lx_salv_existing).
