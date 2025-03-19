@@ -6,6 +6,15 @@ CLASS ltcl_isantos_calculadora DEFINITION FINAL FOR TESTING
 
   PRIVATE SECTION.
 
+    TYPES: BEGIN OF tp_testes,
+             num1 TYPE i,
+             num2 TYPE i,
+             expt TYPE i,
+           END OF tp_testes.
+
+    DATA: testes TYPE STANDARD TABLE OF tp_testes,
+          result TYPE i.
+
     CLASS-METHODS: class_setup, class_teardown.
     CLASS-DATA: sut TYPE REF TO zcl_isantos_ex02.
 
@@ -23,37 +32,50 @@ CLASS ltcl_isantos_calculadora IMPLEMENTATION.
 
   METHOD verificar_divisao_comum.
 
-    DATA: mensagem TYPE string.
-    DATA: resultado TYPE i.
+    CLEAR testes.
+    APPEND VALUE #( num1 =  10 num2 =  2 expt =  5 ) TO testes.
+    APPEND VALUE #( num1 =  64 num2 =  8 expt =  8 ) TO testes.
+    APPEND VALUE #( num1 = -12 num2 =  6 expt = -2 ) TO testes.
+    APPEND VALUE #( num1 =  25 num2 = -5 expt = -5 ) TO testes.
+    APPEND VALUE #( num1 = 111 num2 = 37 expt =  3 ) TO testes.
 
-    resultado = sut->dividir( num1 = 2 num2 = 0 ).
+    LOOP AT testes ASSIGNING FIELD-SYMBOL(<teste>).
 
-    cl_abap_unit_assert=>assert_equals(
-      msg = mensagem
-      act = resultado
-      exp = 2
-    ).
+      result = sut->dividir(
+        num1 = <teste>-num1
+        num2 = <teste>-num2 ).
+
+      cl_abap_unit_assert=>assert_equals(
+        msg = |EXPECTED { <teste>-expt } # GIVEN { result } FOR { <teste>-num1 } / { <teste>-num2 }.|
+        act = result
+        exp = <teste>-expt ).
+
+    ENDLOOP.
 
   ENDMETHOD.
 
   METHOD verificar_divisao_por_zero.
-*    TRY.
-*        sut->dividir(
-*          EXPORTING
-*            num1 = 5
-*            num2 = 0
-*        ).
-*        cl_abap_unit_assert=>fail( 'Deveria levantar uma exceção em uma divisão por zero' ).
-*      CATCH cx_root INTO DATA(exception).
-*
-      ENDMETHOD.
 
+    CLEAR testes.
+    APPEND VALUE #( num1 = 10 num2 =  0 ) TO testes.
+    APPEND VALUE #( num1 = -5 num2 =  0 ) TO testes.
+    APPEND VALUE #( num1 =  1 num2 =  0 ) TO testes.
+
+    LOOP AT testes ASSIGNING FIELD-SYMBOL(<teste>).
+
+      TRY.
+          result = sut->dividir(
+            num1 = <teste>-num1
+            num2 = <teste>-num2 ).
+
+          cl_abap_unit_assert=>fail( |EXPECTED DIVIDE_BY_ZERO_EXCEPTION FOR { <teste>-num1 } / { <teste>-num2 }| ).
+
+        CATCH cx_root INTO DATA(exception).
+
+      ENDTRY.
+
+    ENDLOOP.
+
+  ENDMETHOD.
 
 ENDCLASS.
-
-
-
-* Deve existir pelo menos 2 cenários:
-* Divisão entre quaisquer dois número inteiros
-* Divisão entre um número inteiro qualquer e zero!
-* Obs: Utilizar os métodos especiais (setup, teardown), se necessário!
