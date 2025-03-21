@@ -9,26 +9,20 @@ CLASS zis_api_partner DEFINITION
     INTERFACES: zis_iapi_partner.
 
     CONSTANTS:
-      BEGIN OF api_paths,
-        get_PARTNER_by_id TYPE string VALUE '/partner-service/api/partners/:partnerId',
-      END OF api_paths.
+      get_partner_by_id TYPE string VALUE '/partner-service/api/partners/:partnerId'.
 
+    CLASS-DATA: instance TYPE REF TO zis_iapi_partner.
 
     CLASS-METHODS:
       get_instance
         IMPORTING api_auth      TYPE REF TO /s4tax/iapi_auth OPTIONAL
-        RETURNING VALUE(result) TYPE REF TO zis_iapi_partner
+        RETURNING VALUE(result_instance) TYPE REF TO zis_iapi_partner
         RAISING   /s4tax/cx_http /s4tax/cx_autH.
 
 
   PROTECTED SECTION.
-
-    CLASS-DATA:
-        instance TYPE REF TO zis_iapi_partner.
-
   PRIVATE SECTION.
 ENDCLASS.
-
 
 
 CLASS zis_api_partner IMPLEMENTATION.
@@ -38,7 +32,7 @@ CLASS zis_api_partner IMPLEMENTATION.
           api_authorization TYPE REF TO /s4tax/iapi_auth.
 
     IF instance IS BOUND.
-      result = instance.
+      result_instance = instance.
       RETURN.
     ENDIF.
 
@@ -49,12 +43,11 @@ CLASS zis_api_partner IMPLEMENTATION.
 
     session = api_authorization->login( /s4tax/defaults=>customer_profile_name ).
     CREATE OBJECT instance TYPE zis_api_partner EXPORTING session = session.
-    result = instance.
+    result_instance = instance.
 
   ENDMETHOD.
 
   METHOD zis_iapi_partner~search_partner.
-*   WRITE: / 'Hello World'.
 
     DATA: path_parameter   TYPE /s4tax/api_service=>path_parameter,
           path_parameters  TYPE path_parameter_t,
@@ -74,14 +67,14 @@ CLASS zis_api_partner IMPLEMENTATION.
                                              context_Id = context_id
                                              ).
 
-    create_request_obj_with_param( EXPORTING http_path   = api_paths-get_partner_by_id
-                                             session     = me->session
+    create_request_obj_with_param( EXPORTING session     = me->session
+                                             http_path   = get_partner_by_id
                                              http_method = /s4tax/http_operation=>http_methods-get
-                                             path_params = path_parameters
                                              request_dto = request_dto
+                                             path_params = path_parameters
                                    CHANGING  output      = result
-                                             request     = last_request
-                                           ).
+                                             request     = last_request ).
+
 
     CREATE OBJECT config_generator EXPORTING name_to_camel = abap_false.
     json_config = config_generator->generate_data_type_config( result ).
@@ -89,9 +82,6 @@ CLASS zis_api_partner IMPLEMENTATION.
                                       obj  = json_config ).
 
     last_request->send( ).
-
-*   WRITE: / 'Hello World2'.
-
 
   ENDMETHOD.
 

@@ -8,7 +8,13 @@ REPORT zis_api_program.
 CLASS lcl_main DEFINITION CREATE PUBLIC.
 
   PUBLIC SECTION.
-    METHODS: run.
+    METHODS:
+      run,
+      write_response.
+
+    CLASS-DATA:
+      response TYPE /s4tax/s_search_partner_o.
+
   PROTECTED SECTION.
   PRIVATE SECTION.
 
@@ -20,24 +26,44 @@ CLASS lcl_main IMPLEMENTATION.
 
     DATA: api_is TYPE REF TO zis_iapi_partner.
 
-*   DATA: partner_id TYPE string VALUE '172c4ad5-8924-44e1-a726-7b484d20e7f2',
-    DATA: partner_id TYPE string VALUE '8126317f-f046-45fe-b40f-a25cf73e2ace',
-          result     TYPE /s4tax/s_search_partner_o.
+    DATA: partner_id TYPE string VALUE '2c2fff43-8cb7-4c3f-8060-f6f4f981e835'.
 
     TRY.
         api_is = zis_api_partner=>get_instance(  ).
+
+        IF api_is IS NOT BOUND.
+            WRITE: / 'ERROR: API_IS was not initialized'.
+        ELSE.
+            WRITE: / 'API_IS is Ok'.
+        ENDIF.
+
+        response = api_is->search_partner( EXPORTING partner_id = partner_id ).
+        me->write_response(  ).
+
       CATCH /s4tax/cx_http /s4tax/cx_auth.
-        " Handle Exception
+        WRITE: / 'ERROR: API was not called.'.
     ENDTRY.
 
-    api_is->search_partner(
-      EXPORTING
-        partner_id = partner_id
-      RECEIVING
-        result     = result
-    ).
+  ENDMETHOD.
 
-    WRITE: result-data-name.
+  METHOD write_response.
+
+    IF response IS INITIAL.
+      WRITE: / 'ERROR: Result is empty'.
+      RETURN.
+    ENDIF.
+
+    WRITE: response-data-id-codigo,
+           response-data-id-mensagem,
+           response-data-name,
+           response-data-fantasy_name,
+           response-data-birth_date,
+           response-data-partner_type,
+           response-data-created_at,
+           response-data-updated_at.
+*    addresses    : /s4tax/s_addresses;
+*    fiscal_ids   : /s4tax/s_fiscal_ids;
+*    contacts     : /s4tax/s_contacts;
 
   ENDMETHOD.
 
