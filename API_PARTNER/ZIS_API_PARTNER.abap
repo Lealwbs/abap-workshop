@@ -50,7 +50,7 @@ CLASS zis_api_partner IMPLEMENTATION.
   METHOD zis_iapi_partner~search_partner.
 
     DATA: path_parameter   TYPE /s4tax/api_service=>path_parameter,
-          path_parameters  TYPE path_parameter_t,
+          path_parameters  TYPE TABLE OF path_parameter,
           context_id       TYPE /s4tax/trequest-context_id,
           request_dto      TYPE REF TO /s4tax/request,
           json_config      TYPE REF TO /s4tax/json_element_config,

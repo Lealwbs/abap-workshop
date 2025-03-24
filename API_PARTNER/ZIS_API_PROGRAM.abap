@@ -26,7 +26,8 @@ CLASS lcl_main IMPLEMENTATION.
 
     DATA: api_is TYPE REF TO zis_iapi_partner.
 
-    DATA: partner_id TYPE string VALUE '2c2fff43-8cb7-4c3f-8060-f6f4f981e835'.
+*   DATA: partner_id TYPE string VALUE '2c2fff43-8cb7-4c3f-8060-f6f4f981e835'.
+    DATA: partner_id TYPE string VALUE '66aeb474-56b0-4b1f-b148-cb2ee752e671'.
 
     TRY.
         api_is = zis_api_partner=>get_instance(  ).
@@ -53,8 +54,7 @@ CLASS lcl_main IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    WRITE: response-data-id-codigo,
-           response-data-id-mensagem,
+    WRITE: response-data-id,
            response-data-name,
            response-data-fantasy_name,
            response-data-birth_date,
