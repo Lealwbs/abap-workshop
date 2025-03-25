@@ -1,0 +1,6 @@
+@EndUserText.label : 'Valor do contato'
+@AbapCatalog.enhancementCategory : #NOT_EXTENSIBLE
+define structure /s4tax/s_value {
+  address : abap.string(0);
+
+}
