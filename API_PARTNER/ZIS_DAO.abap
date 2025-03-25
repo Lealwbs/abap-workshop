@@ -16,10 +16,9 @@ CLASS zis_dao IMPLEMENTATION.
 
   METHOD zis_idao~save.
     IF obj IS BOUND.
-      RETURN.
+        MODIFY zis_table_t FROM obj->struct.
     ENDIF.
 
-    MODIFY zis_table_t FROM obj->struct.
   ENDMETHOD.
 
   METHOD zis_idao~get.
@@ -34,7 +33,6 @@ CLASS zis_dao IMPLEMENTATION.
     FROM zis_table_t
     INTO @document
     WHERE vcount = @vcount.
-
 
     IF sy-subrc NE 0.
       RETURN.

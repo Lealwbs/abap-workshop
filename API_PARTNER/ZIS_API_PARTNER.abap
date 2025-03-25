@@ -11,11 +11,12 @@ CLASS zis_api_partner DEFINITION
     CONSTANTS:
       get_partner_by_id TYPE string VALUE '/partner-service/api/partners/:partnerId'.
 
-    CLASS-DATA: instance TYPE REF TO zis_iapi_partner.
+    CLASS-DATA: instance    TYPE REF TO zis_iapi_partner,
+                tp_response TYPE REF TO /s4tax/request.
 
     CLASS-METHODS:
       get_instance
-        IMPORTING api_auth      TYPE REF TO /s4tax/iapi_auth OPTIONAL
+        IMPORTING api_auth               TYPE REF TO /s4tax/iapi_auth OPTIONAL
         RETURNING VALUE(result_instance) TYPE REF TO zis_iapi_partner
         RAISING   /s4tax/cx_http /s4tax/cx_autH.
 
@@ -50,7 +51,7 @@ CLASS zis_api_partner IMPLEMENTATION.
   METHOD zis_iapi_partner~search_partner.
 
     DATA: path_parameter   TYPE /s4tax/api_service=>path_parameter,
-          path_parameters  TYPE TABLE OF path_parameter,
+          path_parameters  TYPE path_parameter_t,
           context_id       TYPE /s4tax/trequest-context_id,
           request_dto      TYPE REF TO /s4tax/request,
           json_config      TYPE REF TO /s4tax/json_element_config,
@@ -64,25 +65,33 @@ CLASS zis_api_partner IMPLEMENTATION.
     APPEND path_parameter TO path_parameters.
 
     request_dto = create_custom_request_dto( context    = /s4tax/constants=>context-part
-                                             context_Id = context_id
-                                             ).
+                                             context_Id = context_id ).
 
     create_request_obj_with_param( EXPORTING session     = me->session
                                              http_path   = get_partner_by_id
                                              http_method = /s4tax/http_operation=>http_methods-get
                                              request_dto = request_dto
                                              path_params = path_parameters
-                                   CHANGING  output      = result
+                                   CHANGING  output      = rresponse
                                              request     = last_request ).
 
-
     CREATE OBJECT config_generator EXPORTING name_to_camel = abap_false.
-    json_config = config_generator->generate_data_type_config( result ).
+    json_config = config_generator->generate_data_type_config( rresponse ).
     last_request->add_prop( EXPORTING name = /s4tax/http_request=>commom_props_name-response_element_config
                                       obj  = json_config ).
 
     last_request->send( ).
+*    tp_response = last_request->get_request_dto(  ).
+*
+*    DATA: line  TYPE string.
+*
+*    line = last_request->get_response_char_data(  ).
+*    " rresponse = last_request->get_request_dto(  ).
 
+  ENDMETHOD.
+
+  METHOD zis_iapi_partner~change_response_for_error.
+    me->change_response_data_type( CHANGING output_data = response_data ).
   ENDMETHOD.
 
 ENDCLASS.
