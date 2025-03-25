@@ -30,8 +30,8 @@ CLASS lcl_main IMPLEMENTATION.
     DATA: api_is       TYPE REF TO zis_iapi_partner,
           api_response TYPE /s4tax/s_search_partner_o.
 
-      DATA: partner_id TYPE string VALUE '8c8ff9e0-3811-48a1-bb86-6d6a53d6b0f3'.
-"     DATA: partner_id TYPE string VALUE '00000'.
+"      DATA: partner_id TYPE string VALUE '8c8ff9e0-3811-48a1-bb86-6d6a53d6b0f3'.
+     DATA: partner_id TYPE string VALUE '00000'.
 
     TRY.
         api_is = zis_api_partner=>get_instance(  ).
@@ -59,9 +59,12 @@ CLASS lcl_main IMPLEMENTATION.
     IF api_response IS INITIAL.
       api_is->change_response_for_error( CHANGING response_data = error_table ).
       body = process_bad_request( error_table ).
-      WRITE: / 'ERROR: ', body.
+      WRITE: / '--- RESPONSE IS EMPTY ---'. ULINE.
+      WRITE: / body.
     ELSE.
       body =  api_response-data-id.
+      WRITE: / '--- SUCCESS ---'. ULINE.
+      WRITE: / body.
       write_response( api_response ).
     ENDIF.
 
@@ -85,8 +88,9 @@ CLASS lcl_main IMPLEMENTATION.
 
   METHOD write_response.
 
+    " if redundante:
     IF response IS INITIAL.
-      WRITE: / 'ERROR: Result is empty'.
+      WRITE: / 'ERROR: The write_response method was called, but the response is empty'.
       RETURN.
     ENDIF.
 
@@ -112,7 +116,7 @@ CLASS lcl_main IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    msg = me->string_utils->concatenate( msg1 = 'Error '
+    msg = me->string_utils->concatenate( msg1 = 'Error'
                                          msg2 = errors-code
                                          msg3 = errors-message ).
     msg_erro = msg.
