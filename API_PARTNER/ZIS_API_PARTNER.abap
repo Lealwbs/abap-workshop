@@ -50,8 +50,7 @@ CLASS zis_api_partner IMPLEMENTATION.
 
   METHOD zis_iapi_partner~search_partner.
 
-    DATA: path_parameter   TYPE /s4tax/api_service=>path_parameter,
-          path_parameters  TYPE path_parameter_t,
+    DATA: path_parameters  TYPE path_parameter_t,
           context_id       TYPE /s4tax/trequest-context_id,
           request_dto      TYPE REF TO /s4tax/request,
           json_config      TYPE REF TO /s4tax/json_element_config,
@@ -59,10 +58,11 @@ CLASS zis_api_partner IMPLEMENTATION.
 
     context_id = partner_id.
 
-    path_parameter-name     = ':partnerId'.
-    path_parameter-value    = partner_id.
-
-    APPEND path_parameter TO path_parameters.
+    FIELD-SYMBOLS <path_parameter>  LIKE LINE OF path_parameters.
+    APPEND INITIAL LINE TO path_parameters ASSIGNING <path_parameter>.
+    <path_parameter>-name = ':partnerId'.
+    <path_parameter>-value = partner_id.
+    UNASSIGN <path_parameter>.
 
     request_dto = create_custom_request_dto( context    = /s4tax/constants=>context-part
                                              context_Id = context_id ).
@@ -81,12 +81,6 @@ CLASS zis_api_partner IMPLEMENTATION.
                                       obj  = json_config ).
 
     last_request->send( ).
-*    tp_response = last_request->get_request_dto(  ).
-*
-*    DATA: line  TYPE string.
-*
-*    line = last_request->get_response_char_data(  ).
-*    " rresponse = last_request->get_request_dto(  ).
 
   ENDMETHOD.
 
