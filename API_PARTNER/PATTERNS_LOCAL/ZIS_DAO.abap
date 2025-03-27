@@ -6,17 +6,18 @@ CLASS zis_dao DEFINITION
   PUBLIC SECTION.
 
     INTERFACES: zis_idao.
-    CLASS-DATA: vcount TYPE zis_table_t.
+    CLASS-DATA: vcount   TYPE zis_table_t.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
 ENDCLASS.
 
 CLASS zis_dao IMPLEMENTATION.
-
+  .
   METHOD zis_idao~save.
+
     IF obj IS BOUND.
-        MODIFY zis_table_t FROM obj->struct.
+      MODIFY zis_table_t FROM obj->struct.
     ENDIF.
 
   ENDMETHOD.
@@ -33,7 +34,6 @@ CLASS zis_dao IMPLEMENTATION.
     FROM zis_table_t
     INTO @document
     WHERE vcount = @vcount.
-
     IF sy-subrc NE 0.
       RETURN.
     ENDIF.
