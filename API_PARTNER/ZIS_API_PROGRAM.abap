@@ -11,9 +11,9 @@ TYPES: BEGIN OF return_struct,
          return_error   TYPE string,
        END OF return_struct.
 
-DATA: pid1 TYPE string VALUE '8c8ff9e0-3811-48a1-bb86-6d6a53d6b0f3', "PARTNER INVÁLIDO
+DATA: pid1 TYPE string VALUE '8c8ff9e0-3811-48a1-bb86-6d6a53d6b0f3', "PARTNER VÁLIDO
       pid2 TYPE string VALUE '20700980-f726-42bc-907b-945e07cd7d27', "PARTNER INVÁLIDO
-      pid3 TYPE string VALUE 'e5a11447-07ca-4b0e-8f4e-30c6ec023ef5', "PARTNER
+      pid3 TYPE string VALUE 'e5a11447-07ca-4b0e-8f4e-30c6ec023ef5', "PARTNER VÁLIDO
       pid4 TYPE string VALUE '', "PARTNER
       pid5 TYPE string VALUE ''. "PARTNER
 
@@ -22,8 +22,14 @@ DATA: l_response TYPE return_struct.
 START-OF-SELECTION.
 
   DATA: main TYPE REF TO zis_api_partner_run.
-  CREATE OBJECT main.
-  l_response = main->run( EXPORTING partnerid = pid1 ).
+
+  TRY.
+      CREATE OBJECT main.
+    CATCH /s4tax/cx_http /s4tax/cx_autH.
+      WRITE: / 'ERROR: It was not possible to call the API'.
+  ENDTRY.
+
+  l_response = main->run( EXPORTING partnerid = pid3 ).
 
   IF l_response-success EQ abap_true.
     WRITE: / '--- SUCCESS ---'. ULINE.

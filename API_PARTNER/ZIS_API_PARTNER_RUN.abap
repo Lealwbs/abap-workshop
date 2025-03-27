@@ -8,20 +8,18 @@ CLASS zis_api_partner_run DEFINITION PUBLIC FINAL CREATE PUBLIC.
              return_error   TYPE string,
            END OF return_struct.
 
-    DATA: string_utils    TYPE REF TO /s4tax/string_utils,
-          api_is          TYPE REF TO zis_iapi_partner,
-          dao_obj         TYPE REF TO zis_idao,
-          bo_obj          TYPE REF TO zis_bo.
-
+    DATA: string_utils TYPE REF TO /s4tax/string_utils,
+          api_is       TYPE REF TO zis_iapi_partner,
+          dao_obj      TYPE REF TO zis_idao,
+          bo_obj       TYPE REF TO zis_bo.
 
     METHODS:
-
       constructor         IMPORTING api TYPE REF TO zis_iapi_partner OPTIONAL
                                     dao TYPE REF TO zis_idao OPTIONAL
                           RAISING   /s4tax/cx_http /s4tax/cx_auth,
 
-      run                 IMPORTING partnerid       TYPE string
-                          RETURNING VALUE(return_response)  TYPE return_struct,
+      run                 IMPORTING partnerid              TYPE string
+                          RETURNING VALUE(return_response) TYPE return_struct,
 
       process_bad_request IMPORTING errors          TYPE /s4tax/s_default_error
                           RETURNING VALUE(msg_erro) TYPE string.
@@ -39,7 +37,11 @@ CLASS zis_api_partner_run IMPLEMENTATION.
     IF api IS NOT INITIAL.
       api_is = api.
     ELSE.
-      api_is = zis_api_partner=>get_instance( ).
+      TRY.
+          api_is = zis_api_partner=>get_instance( ).
+        CATCH /s4tax/cx_http /s4tax/cx_autH.
+          "WRITE: / 'ERROR: API_IS was not initialized'.
+      ENDTRY.
     ENDIF.
 
     IF api_is IS NOT BOUND.  "NOT BOUND = Não está preenchido
@@ -107,7 +109,7 @@ CLASS zis_api_partner_run IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    msg = me->string_utils->concatenate( msg1 = 'Error'
+    msg = string_utils->concatenate( msg1 = 'Error'
                                          msg2 = errors-code
                                          msg3 = errors-message ).
     msg_erro = msg.
