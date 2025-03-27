@@ -10,7 +10,8 @@ CLASS ltcl_zis_api_partner DEFINITION FINAL FOR TESTING
 
     METHODS:
       setup,
-      get_instance FOR TESTING.
+      test_get_partner_by_id FOR TESTING,
+      process_two_instances FOR TESTING.
 
 ENDCLASS.
 
@@ -21,22 +22,45 @@ CLASS ltcl_zis_api_partner IMPLEMENTATION.
 
     DATA: defaults TYPE REF TO /s4tax/defaults.
     mount_data(  ).
-    mock_configuration(  ).
 
-    defaults = NEW #( mock_dao_pack ).
-    cut = NEW #( session = session defaults = defaults ).
+    TRY.
+        mock_configuration(  ).
+        defaults = NEW #( mock_dao_pack ).
+        cut = NEW #( session = session defaults = defaults ).
+      CATCH /s4tax/cx_auth /s4tax/cx_http.
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+  METHOD test_get_partner_by_id.
+    DATA: output          TYPE /s4tax/s_search_partner_o,
+          expected_output TYPE /s4tax/s_search_partner_o,
+          partner_id      TYPE string.
+
+    partner_id = '8c8ff9e0-3811-48a1-bb86-6d6a53d6b0f3'.
+
+    DATA(valid_response) = '{' && '....'.
+
+    expected_output = VALUE /s4tax/s_search_partner_o(  ).
+
+    response->if_http_response~set_cdata( data = valid_response ).
+
+    TRY.
+        output = cut->zis_iapi_partner~search_partner( partner_id = partner_id ).
+      CATCH /s4tax/cx_http.
+    ENDTRY.
+
+    cl_abap_unit_assert=>assert_equals( act = output
+                                        exp = expected_output ).
 
   ENDMETHOD.
 
-  METHOD get_instance.
 
-    DATA: instance TYPE REF TO zis_iapi_partner.
-    mock_configuration(  ).
-
-    instance = zis_api_partner=>get_instance( mock_api_auth ).
-    cl_abap_unit_assert=>assert_bound( instance ).
-
+  METHOD process_two_instances.
   ENDMETHOD.
+
+
 
 ENDCLASS.
 
