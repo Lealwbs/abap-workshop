@@ -7,12 +7,9 @@ CLASS ltcl_zis_api_partner_run DEFINITION FINAL FOR TESTING
 
   PRIVATE SECTION.
 
-*    CLASS-DATA:
-*      db_mock TYPE REF TO if_osql_test_environment.
-
     DATA: sut      TYPE REF TO zis_api_partner_run,
           mock_api TYPE REF TO zis_iapi_partner,
-          mock_dao TYPE REF TO zis_dao.
+          mock_dao TYPE REF TO zis_idao.
 
     METHODS:
       setup, tierdown,
@@ -26,7 +23,7 @@ CLASS ltcl_zis_api_partner_run IMPLEMENTATION.
   METHOD setup.
 
     mock_api ?= cl_abap_testdouble=>create( 'zis_iapi_partner' ).
-    "mock_dao ?= cl_abap_testdouble=>create( 'zis_idao' ).
+    mock_dao ?= cl_abap_testdouble=>create( 'zis_idao' ).
 
     TRY.
         sut = NEW zis_api_partner_run(
@@ -56,7 +53,7 @@ CLASS ltcl_zis_api_partner_run IMPLEMENTATION.
     DATA(result) = sut->run( partnerid = valid_partner_id ).
 
     cl_abap_unit_assert=>assert_equals(
-      act = result
+      act = result-success
       exp = abap_true
       msg = |EXPECTED: Search Successful / ACTUAL: Search Failed - | &&
             |PartnerID { valid_partner_id } does not exist or was not found.| ).
@@ -75,7 +72,7 @@ CLASS ltcl_zis_api_partner_run IMPLEMENTATION.
     DATA(result) = sut->run( partnerid = unvalid_partner_id ).
 
     cl_abap_unit_assert=>assert_equals(
-      act = result
+      act = result-success
       exp = abap_false
       msg = |EXPECTED: Search Failed / ACTUAL: Other -  | &&
             |PartnerID { unvalid_partner_id } should not exist, but it was found.| ).
