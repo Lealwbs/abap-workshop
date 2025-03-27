@@ -26,7 +26,7 @@ CLASS ltcl_zis_api_partner_run IMPLEMENTATION.
   METHOD setup.
 
     mock_api ?= cl_abap_testdouble=>create( 'zis_iapi_partner' ).
-    " mock_dao ?= cl_abap_testdouble=>create( 'zis_idao' ).
+    "mock_dao ?= cl_abap_testdouble=>create( 'zis_idao' ).
 
     TRY.
         sut = NEW zis_api_partner_run(
@@ -45,18 +45,21 @@ CLASS ltcl_zis_api_partner_run IMPLEMENTATION.
 
     DATA: valid_response TYPE /s4tax/s_search_partner_o.
 
+    valid_response-data-partner-id = '80123'.
+    valid_response-data-partner-name = 'Nome de Teste'.
+
     cl_abap_testdouble=>configure_call( mock_api )->ignore_all_parameters( )->returning( value = valid_response ).
 
     mock_api->search_partner( '' ).
 
-    DATA unvalid_partner_id TYPE string VALUE '8c8ff9e0-3811-48a1-bb86-6d6a53d6b0f3'.
-    DATA(result) = sut->run( partnerid = unvalid_partner_id ).
+    DATA valid_partner_id TYPE string VALUE '8c8ff9e0-3811-48a1-bb86-6d6a53d6b0f3'.
+    DATA(result) = sut->run( partnerid = valid_partner_id ).
 
     cl_abap_unit_assert=>assert_equals(
       act = result
       exp = abap_true
-      msg = |EXPECTED: Search Successful / RECIEVED: Search Failed - | &&
-            |PartnerID { unvalid_partner_id } does not exist or was not found.| ).
+      msg = |EXPECTED: Search Successful / ACTUAL: Search Failed - | &&
+            |PartnerID { valid_partner_id } does not exist or was not found.| ).
 
   ENDMETHOD.
 
@@ -74,7 +77,7 @@ CLASS ltcl_zis_api_partner_run IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals(
       act = result
       exp = abap_false
-      msg = |EXPECTED: Search Failed / RECIEVED: Other -  | &&
+      msg = |EXPECTED: Search Failed / ACTUAL: Other -  | &&
             |PartnerID { unvalid_partner_id } should not exist, but it was found.| ).
 
   ENDMETHOD.
