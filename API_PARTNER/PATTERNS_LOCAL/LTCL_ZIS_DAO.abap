@@ -66,11 +66,13 @@ CLASS ltcl_zis_dao IMPLEMENTATION.
 
     cut->zis_idao~save( obj = object_to_save ).
 
-    cl_abap_unit_assert=>assert_equals( act = object_to_save->get_vcount(  )
-                                        exp = '150'
-                                        msg = 'The Count saved does not match with the expected.' ).
+    DATA(result_obj) = cut->zis_idao~get( vcount = '150' ).
 
-    cl_abap_unit_assert=>assert_equals( act = object_to_save->get_id(  )
+    cl_abap_unit_assert=>assert_equals( act = result_obj->get_vcount(  )
+                                        exp = '150'
+                                        msg = 'The vCount saved does not match with the expected.' ).
+
+    cl_abap_unit_assert=>assert_equals( act = result_obj->get_id(  )
                                         exp = 'MSG_50'
                                         msg = 'The ID saved does not match with the expected.' ).
 

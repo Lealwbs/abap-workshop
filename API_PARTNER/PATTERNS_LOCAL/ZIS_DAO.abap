@@ -13,7 +13,7 @@ CLASS zis_dao DEFINITION
 ENDCLASS.
 
 CLASS zis_dao IMPLEMENTATION.
-  .
+  
   METHOD zis_idao~save.
 
     IF obj IS BOUND.
