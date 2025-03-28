@@ -38,11 +38,107 @@ CLASS ltcl_zis_api_partner IMPLEMENTATION.
           expected_output TYPE /s4tax/s_search_partner_o,
           partner_id      TYPE string.
 
-    partner_id = '8c8ff9e0-3811-48a1-bb86-6d6a53d6b0f3'.
+    partner_id = '172c4ad5-8924-44e1-a726-7b484d20e7f2'.
 
-    DATA(valid_response) = '{' && '....'.
+    DATA(valid_response) = '{' &&
+                           '  "data": {' &&
+                           '    "partner": {' &&
+                           '      "id": "172c4ad5-8924-44e1-a726-7b484d20e7f2",' &&
+                           '      "name": "John Doe LTDA",' &&
+                           '      "fantasy_name": "John Doe LTDA",' &&
+                           '      "birth_date": "2012-04-23T18:25:43.511Z",' &&
+                           '      "partner_type": "PJ",' &&
+                           '      "created_at": "2023-07-18T21:40:24.058Z",' &&
+                           '      "updated_at": "2023-07-18T21:40:24.058Z",' &&
+                           '      "addresses": [' &&
+                           '        {' &&
+                           '          "id": "0b568175-1c30-434f-93d5-cce8fe290109",' &&
+                           '          "country": "Brazil",' &&
+                           '          "country_code": "123",' &&
+                           '          "main": true,' &&
+                           '          "zip_code": 10010000,' &&
+                           '          "uf": "SP",' &&
+                           '          "uf_code": "123",' &&
+                           '          "city_code": "7107",' &&
+                           '          "city": "New York",' &&
+                           '          "type": "Avenida",' &&
+                           '          "public_place": "Pixar",' &&
+                           '          "home_number": "320B",' &&
+                           '          "neighborhood": "Villa",' &&
+                           '          "complement": "Home",' &&
+                           '          "reference_point": "in the middle",' &&
+                           '          "province": "New York",' &&
+                           '          "category": "tax"' &&
+                           '        }' &&
+                           '      ],' &&
+                           '      "fiscal_ids": [' &&
+                           '        {' &&
+                           '          "id": "0b568175-1c30-434f-93d5-cce8fe290109",' &&
+                           '          "type": "RG",' &&
+                           '          "value": "MG12345",' &&
+                           '          "issuer": "Polícia Civil"' &&
+                           '        }' &&
+                           '      ],' &&
+                           '      "contacts": [' &&
+                           '        {' &&
+                           '          "id": "172c4ad5-8924-44e1-a726-7b484d20e7f2",' &&
+                           '          "type": "EMAIL",' &&
+                           '          "value": {' &&
+                           '            "address": "my@email.com"' &&
+                           '          },' &&
+                           '          "observation": "my email",' &&
+                           '          "responsible": "my email"' &&
+                           '        }' &&
+                           '      ]' &&
+                           '    }' &&
+                           '  }' &&
+                           '}'.
 
-    expected_output = VALUE /s4tax/s_search_partner_o(  ).
+    expected_output = VALUE /s4tax/s_search_partner_o(
+      data = VALUE /s4tax/s_data_partner(
+        partner = VALUE /s4tax/s_partner(
+          id = '172c4ad5-8924-44e1-a726-7b484d20e7f2'
+          name = 'John Doe LTDA'
+          fantasy_name = 'John Doe LTDA'
+          birth_date = '2012-04-23T18:25:43.511Z'
+          partner_type = 'PJ'
+          created_at = '2023-07-18T21:40:24.058Z'
+          updated_at = '2023-07-18T21:40:24.058Z'
+          addresses = VALUE /s4tax/s_addresses_t(
+              ( id = '0b568175-1c30-434f-93d5-cce8fe290109'
+              country = 'Brazil'
+              country_code = '123'
+              zip_code = '10010000'
+              main = abap_true
+              uf = 'SP'
+              uf_code = '123'
+              city_code = '7107'
+              city = 'New York'
+              type = 'Avenida'
+              public_place = 'Pixar'
+              home_number = '320B'
+              neighborhood = 'Villa'
+              complement = 'Home'
+              reference_point = 'in the middle'
+              province = 'New York'
+              category = 'tax' )
+          )
+          fiscal_ids = VALUE /s4tax/s_fiscal_ids_t(
+              ( id = '0b568175-1c30-434f-93d5-cce8fe290109'
+              type = 'RG'
+              value = 'MG12345'
+              issuer = 'Polícia Civil' )
+          )
+          contacts = VALUE /s4tax/s_contacts_t(
+              ( id = '172c4ad5-8924-44e1-a726-7b484d20e7f2'
+              type = 'EMAIL'
+              value = VALUE /s4tax/s_value( address = 'my@email.com' )
+              observation = 'my email'
+              responsible = 'my email' )
+          )
+        )
+      )
+    ).
 
     response->if_http_response~set_cdata( data = valid_response ).
 
@@ -56,31 +152,7 @@ CLASS ltcl_zis_api_partner IMPLEMENTATION.
 
   ENDMETHOD.
 
-
   METHOD process_two_instances.
   ENDMETHOD.
 
-
-
 ENDCLASS.
-
-*    "id": "e5a11447-07ca-4b0e-8f4e-30c6ec023ef5",
-*    "id": "07116020-a9c9-46cb-a188-bebad790d4dc",
-*    "id": "09423257-b7d6-44ce-88af-7c01dcbca2a6",
-*    "id": "9f3813f0-6df6-4c46-91f9-8a8dc214023c",
-*    "id": "659cf7b8-6769-44ce-86c1-f418bba1a342",
-*    "id": "6514df81-fbc7-4e58-896a-1e3bc270257f",
-*    "id": "12fd95fc-40dd-45e8-8cf4-3fc340a32826",
-*    "id": "0e934936-7192-4b45-a146-df7d4e503c6c",
-*    "id": "e7bb0c60-bc80-42d6-b82a-3e2da49dcb7f",
-*    "id": "e7975e28-ef87-4f3e-adf0-7cc8ec0c2eff",
-*    "id": "b979a761-70dc-45a4-8751-572c7e24bc51",
-*    "id": "637308c5-9124-4e19-a9b4-a1e0c2ecf2e3",
-*    "id": "4a15b896-d3a5-43e5-aa94-93766faa0937",
-*    "id": "6768aefc-9564-409a-8232-39ed128c0b57",
-*    "id": "75459c4a-3b0c-4967-b6f2-0707f918820f",
-*    "id": "5afd1bd7-e54e-4676-80a9-9870477b432a",
-*    "id": "6f0872bc-ab6f-4a54-a882-d5bcbf22882f",
-*    "id": "8b9f221b-ae70-4904-b14a-1c5730803838",
-*    "id": "05627153-dbbc-49b0-b0b4-2c16854316cc",
-*    "id": "cf11c9ab-f441-4ca3-9caa-093654cd35f6",

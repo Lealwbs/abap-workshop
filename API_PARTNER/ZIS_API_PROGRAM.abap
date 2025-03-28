@@ -14,7 +14,7 @@ TYPES: BEGIN OF return_struct,
 DATA: pid1 TYPE string VALUE '8c8ff9e0-3811-48a1-bb86-6d6a53d6b0f3', "PARTNER VÁLIDO
       pid2 TYPE string VALUE '20700980-f726-42bc-907b-945e07cd7d27', "PARTNER INVÁLIDO
       pid3 TYPE string VALUE 'e5a11447-07ca-4b0e-8f4e-30c6ec023ef5', "PARTNER VÁLIDO
-      pid4 TYPE string VALUE '', "PARTNER
+      pid4 TYPE string VALUE '172c4ad5-8924-44e1-a726-7b484d20e7f2', "PARTNER DA API
       pid5 TYPE string VALUE ''. "PARTNER
 
 DATA: l_response TYPE return_struct.
@@ -29,7 +29,7 @@ START-OF-SELECTION.
       WRITE: / 'ERROR: It was not possible to call the API'.
   ENDTRY.
 
-  l_response = main->run( EXPORTING partnerid = pid3 ).
+  l_response = main->run( EXPORTING partnerid = pid1 ).
 
   IF l_response-success EQ abap_true.
     WRITE: / '--- SUCCESS ---'. ULINE.
@@ -55,38 +55,43 @@ FORM write_response USING response TYPE return_struct.
          / 'Partner Type: ', response-return_partner-data-partner-partner_type,
          / 'Created at:   ', response-return_partner-data-partner-created_at,
          / 'Updated at:   ', response-return_partner-data-partner-updated_at.
-
   ULINE.
-  WRITE: / 'Address ID:      ', response-return_partner-data-partner-addresses-id,
-         / 'Country:         ', response-return_partner-data-partner-addresses-country,
-         / 'Country_code:    ', response-return_partner-data-partner-addresses-country_code,
-         / 'Zip_code:        ', response-return_partner-data-partner-addresses-zip_code,
-         / 'Main:            ', response-return_partner-data-partner-addresses-main,
-         / 'UF:              ', response-return_partner-data-partner-addresses-uf,
-         / 'UF_code:         ', response-return_partner-data-partner-addresses-uf_code,
-         / 'City_code:       ', response-return_partner-data-partner-addresses-city_code,
-         / 'City:            ', response-return_partner-data-partner-addresses-city,
-         / 'Type:            ', response-return_partner-data-partner-addresses-type,
-         / 'Public_place:    ', response-return_partner-data-partner-addresses-public_place,
-         / 'Home_number:     ', response-return_partner-data-partner-addresses-home_number,
-         / 'Neighborhood:    ', response-return_partner-data-partner-addresses-neighborhood,
-         / 'Complement:      ', response-return_partner-data-partner-addresses-complement,
-         / 'Reference_point: ', response-return_partner-data-partner-addresses-reference_point,
-         / 'Province:        ', response-return_partner-data-partner-addresses-province,
-         / 'Category:        ', response-return_partner-data-partner-addresses-category.
 
+  LOOP AT response-return_partner-data-partner-addresses INTO DATA(address).
+  WRITE: / 'Address ID:      ', address-id,
+         / 'Country:         ', address-country,
+         / 'Country_code:    ', address-country_code,
+         / 'Zip_code:        ', address-zip_code,
+         / 'Main:            ', address-main,
+         / 'UF:              ', address-uf,
+         / 'UF_code:         ', address-uf_code,
+         / 'City_code:       ', address-city_code,
+         / 'City:            ', address-city,
+         / 'Type:            ', address-type,
+         / 'Public_place:    ', address-public_place,
+         / 'Home_number:     ', address-home_number,
+         / 'Neighborhood:    ', address-neighborhood,
+         / 'Complement:      ', address-complement,
+         / 'Reference_point: ', address-reference_point,
+         / 'Province:        ', address-province,
+         / 'Category:        ', address-category.
   ULINE.
-  WRITE: / 'Fiscal ID:       ', response-return_partner-data-partner-fiscal_ids-id,
-         / 'Fiscal Type:     ', response-return_partner-data-partner-fiscal_ids-type,
-         / 'Fiscal Value:    ', response-return_partner-data-partner-fiscal_ids-value,
-         / 'Fiscal Issuer:   ', response-return_partner-data-partner-fiscal_ids-issuer.
+  ENDLOOP.
 
-
+  LOOP AT response-return_partner-data-partner-fiscal_ids INTO DATA(fiscal_id).
+  WRITE: / 'Fiscal ID:       ', fiscal_id-id,
+         / 'Fiscal Type:     ', fiscal_id-type,
+         / 'Fiscal Value:    ', fiscal_id-value,
+         / 'Fiscal Issuer:   ', fiscal_id-issuer.
   ULINE.
-  WRITE: / 'Contact ID:          ', response-return_partner-data-partner-contacts-id,
-         / 'Contact Type:        ', response-return_partner-data-partner-contacts-type,
-         / 'Contact Address:     ', response-return_partner-data-partner-contacts-value-address,
-         / 'Contact Observation: ', response-return_partner-data-partner-contacts-observation,
-         / 'Contact Responsible: ', response-return_partner-data-partner-contacts-responsible.
+  ENDLOOP.
+
+  LOOP AT response-return_partner-data-partner-contacts INTO DATA(contact).
+  WRITE: / 'Contact ID:          ', contact-id,
+         / 'Contact Type:        ', contact-type,
+         / 'Contact Address:     ', contact-value-address,
+         / 'Contact Observation: ', contact-observation,
+         / 'Contact Responsible: ', contact-responsible.
+  ENDLOOP.
 
 ENDFORM.

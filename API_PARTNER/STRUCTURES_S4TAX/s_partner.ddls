@@ -8,8 +8,8 @@ define structure /s4tax/s_partner {
   partner_type : abap.string(0);
   created_at   : abap.string(0);
   updated_at   : abap.string(0);
-  addresses    : /s4tax/s_addresses;
-  fiscal_ids   : /s4tax/s_fiscal_ids;
-  contacts     : /s4tax/s_contacts;
+  addresses    : /s4tax/s_addresses_t;
+  fiscal_ids   : /s4tax/s_fiscal_ids_t;
+  contacts     : /s4tax/s_contacts_t;
 
 }
