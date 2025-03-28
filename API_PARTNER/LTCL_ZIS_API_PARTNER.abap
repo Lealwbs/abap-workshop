@@ -10,8 +10,8 @@ CLASS ltcl_zis_api_partner DEFINITION FINAL FOR TESTING
 
     METHODS:
       setup,
-      test_get_partner_by_id FOR TESTING,
-      process_two_instances FOR TESTING.
+      get_partner_by_id FOR TESTING,
+      error_get_partner_by_id FOR TESTING.
 
 ENDCLASS.
 
@@ -33,10 +33,11 @@ CLASS ltcl_zis_api_partner IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD test_get_partner_by_id.
+  METHOD get_partner_by_id.
     DATA: output          TYPE /s4tax/s_search_partner_o,
           expected_output TYPE /s4tax/s_search_partner_o,
-          partner_id      TYPE string.
+          partner_id      TYPE string,
+          status_code     TYPE i.
 
     partner_id = '172c4ad5-8924-44e1-a726-7b484d20e7f2'.
 
@@ -147,12 +148,43 @@ CLASS ltcl_zis_api_partner IMPLEMENTATION.
       CATCH /s4tax/cx_http.
     ENDTRY.
 
+    cut->get_last_request(  )->get_status( IMPORTING code = status_code ).
+
     cl_abap_unit_assert=>assert_equals( act = output
                                         exp = expected_output ).
 
+    cl_abap_unit_assert=>assert_equals( act = status_code
+                                        exp = 200 ).
+
   ENDMETHOD.
 
-  METHOD process_two_instances.
+  METHOD error_get_partner_by_id.
+    DATA: actual_output   TYPE /s4tax/s_default_error,
+          expected_output TYPE /s4tax/s_default_error,
+          partner_id      TYPE string.
+
+    partner_id = '172c4ad5-8924-44e1-a726-7b484d20e7f2'. "PARTNER ID QUALQUER
+
+    DATA(fake_response) = '{' &&
+                           '  "code": "400",' &&
+                           '  "message": "Erro no teste"' &&
+                           '}'.
+
+    expected_output = VALUE /s4tax/s_default_error( code = '400'
+                                                    message = 'Erro no teste' ).
+
+    TRY.
+        cut->zis_iapi_partner~search_partner( partner_id = partner_id ).
+      CATCH /s4tax/cx_http.
+    ENDTRY.
+
+    response->if_http_response~set_cdata( data = fake_response ).
+
+    cut->zis_iapi_partner~change_response_for_error( CHANGING response_data = actual_output  ).
+
+    cl_abap_unit_assert=>assert_equals( act = actual_output-code
+                                        exp = expected_output-code ).
+
   ENDMETHOD.
 
 ENDCLASS.
