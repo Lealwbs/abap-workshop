@@ -10,12 +10,10 @@ CLASS /s4tax/contingency_integration DEFINITION PUBLIC FINAL CREATE PUBLIC.
           dao_server              TYPE REF TO /s4tax/idao_server,
           dao_branch              TYPE REF TO /s4tax/idao_branch,
           dal_branch              TYPE REF TO /s4tax/idal_branch,
-
           defaults                TYPE REF TO /s4tax/defaults,
           ls_set_cont             TYPE j_1bnfe_contin,
 
           server                  TYPE REF TO /s4tax/server,
-
           server_check_nfe        TYPE j_1bnfe_server_check,
           server_check_dfe        TYPE j_1bdfe_server_check,
 
@@ -29,15 +27,17 @@ CLASS /s4tax/contingency_integration DEFINITION PUBLIC FINAL CREATE PUBLIC.
           timestamp_now           TYPE /s4tax/tserver-contingency_date,
           timestamp_server        TYPE /s4tax/tserver-contingency_date,
           today_date              TYPE REF TO /s4tax/date,
-          update_time_status      TYPE tims,
-          last_update_sefaz       TYPE timestamp.
+          last_update_sefaz       TYPE timestamp,
 
-*    TYPES: ty_server_check TYPE j_1bnfe_server_check.
-*           "tt_server_check TYPE STANDARD TABLE OF ty_server_check.
+          contingency_date      TYPE /s4tax/e_last_status.
+
+    TYPES: tt_nfe_server_check TYPE TABLE OF j_1bnfe_server_check,
+           tt_dfe_server_check TYPE TABLE OF j_1bdfe_server_check.
 
     METHODS: main
-      IMPORTING is_branch_info  TYPE j_1bnfe_branch_info
-      EXPORTING es_server_check TYPE j_1bnfe_server_check.
+      IMPORTING is_branch_info     TYPE j_1bnfe_branch_info
+      EXPORTING server_check_nfe_t TYPE tt_nfe_server_check
+                server_check_dfe_t TYPE tt_dfe_server_check.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -60,7 +60,6 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
     IF sy-subrc <> 0. RETURN. ENDIF.
 
 
-
     dfe_std = /s4tax/dfe_std=>get_instance( ).
     dfe_std->j_1bnfe_cust3_read( EXPORTING bukrs  = is_branch_info-bukrs
                                            branch = is_branch_info-branch
@@ -72,7 +71,6 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
     IF cust3 IS INITIAL OR cust3-autoserver IS INITIAL. EXIT. ENDIF.
 
 
-
     dao_pack_model_business = /s4tax/dao_pack_model_business=>default_instance( ).
     dao_branch = dao_pack_model_business->branch( ).
     branch = dao_branch->get( company_code = is_branch_info-bukrs
@@ -82,7 +80,6 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
     dal_branch->fill_branch_data( branch ).
     branch_address = branch->get_address( ).
     IF branch_address IS NOT BOUND. EXIT. ENDIF.
-
 
 
     dfe_std->j_1b_nfe_contingency_read( EXPORTING land1       = branch_address->struct-land1
@@ -104,18 +101,15 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
         server_check_nfe-tpamb = cust3-tpamb.
         server_check_nfe-sefaz_active = 'X'.
         server_check_nfe-scan_active = ''.
-        "server_check_nfe-svc_sp_active = ''.
-        "server_check_nfe-svc_rs_active = ''.
-        "server_check_nfe-svc_active = ''.
         server_check_nfe-checktmpl = date->to_timestamp( ).
-        "server_check_nfe-tmpl_scan_act = ''.
+        "server_check_nfe-tmpl_scan_act = ''. ?
         server_check_nfe-version   = cust3-version.
 
       WHEN '57'. "DFE
         server_check_dfe-cnpj           = is_branch_info-bukrs.
         server_check_dfe-active_service = /s4tax/dfe_constants=>svc_code_sap-sefaz.
         server_check_dfe-checktmpl      = date->to_timestamp( ).
-        "server_check_dfe-tmpl_scan_act  = ''.
+        "server_check_dfe-tmpl_scan_act  = ''. ?
         server_check_dfe-version        = cust3-version.
         server_check_dfe-tpamb          = cust3-tpamb.
         server_check_dfe-model          = is_branch_info-model.
@@ -150,10 +144,8 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
               ENDCASE.
             ENDIF.
 
-            DATA: server_check_nfe_t TYPE TABLE OF j_1bnfe_server_check.
             server_check_nfe-checktmpl = server->struct-contingency_date.
             APPEND server_check_nfe TO server_check_nfe_t.
-
 
           WHEN '57'. "DFE
             IF server->struct-active_server = 'SVC'.
@@ -166,7 +158,6 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
               ENDCASE.
             ENDIF.
 
-            DATA: server_check_dfe_t TYPE TABLE OF j_1bdfe_server_check.
             server_check_dfe-checktmpl = server->struct-contingency_date.
             APPEND server_check_dfe TO server_check_dfe_t.
 
@@ -179,15 +170,6 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
       dao_document  = /s4tax/dao_document=>get_instance( ).
 
 
-      DATA: v_contingency_date TYPE /s4tax/e_last_status.
-      SELECT contingency_date
-      FROM /s4tax/tserver
-      WHERE regio = @server->struct-regio AND
-            model = @server->struct-model
-      INTO @v_contingency_date.
-      ENDSELECT.
-
-
       CASE is_branch_info-model.
 
         WHEN '55'. "NFE
@@ -197,7 +179,7 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
                                                               branch_code             = is_branch_info-branch
                                                     CHANGING  server_status           = server_check_nfe
                                                               nfe_contingency_control = ls_set_cont
-                                                              contingency_date        = v_contingency_date ).
+                                                              contingency_date        = contingency_date ).
 
         WHEN '57'. "DFE
           DATA: cte_integration TYPE REF TO /s4tax/cte_integration.
@@ -206,11 +188,11 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
                                                               branch_code             = is_branch_info-branch
                                                     CHANGING  server_status           = server_check_dfe
                                                               dfe_contingency_control = ls_set_cont
-                                                              contingency_date        = v_contingency_date ).
+                                                              contingency_date        = contingency_date ).
 
       ENDCASE.
 
-      server->set_contingency_date( v_contingency_date ).
+      server->set_contingency_date( contingency_date ).
       server->set_regio( branch_address->struct-regio ).
       dao_dfe_cfg->save( dfe_cfg ).
 
