@@ -41,7 +41,7 @@ ENDIF.
 READ TABLE dfe_cfg_list INTO dfe_cfg INDEX 1.
 
 IF sy-subrc <> 0.
-RETURN.
+  EXIT.
 ENDIF.
 
 dfe_std = /s4tax/dfe_std=>get_instance( ).

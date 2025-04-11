@@ -25,8 +25,8 @@ CLASS /s4tax/contingency_integration DEFINITION PUBLIC FINAL CREATE PUBLIC.
 
           date                    TYPE REF TO /s4tax/date,
           timestamp_now           TYPE /s4tax/tserver-contingency_date,
-          timestamp_server        TYPE /s4tax/tserver-contingency_date,
           today_date              TYPE REF TO /s4tax/date,
+          timestamp_server        TYPE timestamp,
           last_update_sefaz       TYPE timestamp,
 
           contingency_date        TYPE /s4tax/e_last_status.
@@ -75,10 +75,14 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
     ENDIF.
 
     READ TABLE dfe_cfg_list INTO dfe_cfg INDEX 1.
-
     IF sy-subrc <> 0.
       EXIT.
     ENDIF.
+
+    IF dfe_cfg IS INITIAL.
+      EXIT.
+    ENDIF.
+
   ENDMETHOD.
 
   METHOD load_branch_information.
@@ -97,6 +101,8 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
 
     dao_pack_model_business = /s4tax/dao_pack_model_business=>default_instance( ).
     dao_branch = dao_pack_model_business->branch( ).
+
+    CREATE OBJECT branch.
     branch = dao_branch->get( company_code = is_branch_info-bukrs
                               branch_code  = is_branch_info-branch ).
 
@@ -146,10 +152,17 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
 
   METHOD timestamp_cfg.
     CREATE OBJECT today_date EXPORTING date = sy-datum time = sy-timlo.
+    CREATE OBJECT dfe_cfg.
     timestamp_now = today_date->to_timestamp( ).
     last_update_sefaz = server->struct-contingency_date.
+
+    DATA tmp_time TYPE tims.
+    "tmp_time = server->get_contingency_date( ).
+    tmp_time = dfe_cfg->get_status_update_time( ).
+
     timestamp_server = today_date->to_time_timestamp(
-      time      = dfe_cfg->struct-status_update_time
+      time      = tmp_time "Tentando corrigir
+      "time      = dfe_cfg->struct-status_update_time  "Está dando dump
       timestamp = last_update_sefaz ).
   ENDMETHOD.
 
@@ -177,7 +190,10 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
 
     IF server->struct-active_server = 'SVC'.
       CLEAR server_check_dfe-active_service.
-      CASE  branch_address->struct-regio.
+
+      DATA: tmp_branch_address TYPE /s4tax/tserver-regio.
+      branch_address->get_regio( ).
+      CASE tmp_branch_address.
         WHEN 'AP' OR 'SP' OR 'MT' OR 'MS' OR 'PE' OR 'RR'.
           server_check_dfe-active_service = /s4tax/dfe_constants=>svc_code_sap-rs.
         WHEN OTHERS.
