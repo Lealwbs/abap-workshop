@@ -255,7 +255,61 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
       WHEN '57'. APPEND server_check_dfe TO server_check_dfe_t.
     ENDCASE.
     EXIT.
+
   ENDMETHOD.
 
 ENDCLASS.
 
+**********************************************************************
+* NEW BODY FOR /S4TAX/I01_NFE_CHECK_ACT_SERV
+*********************************************************************
+*
+*    load_branch_information( is_branch_info ).
+*    contingency_read( is_branch_info ).
+*    nfe_server_check( is_branch_info ).
+*    initialize_dao_and_server( ).
+*    read_dfe_cfg_list( ).
+*    timestamp_cfg( ).
+*
+*    IF ls_set_cont IS NOT INITIAL AND dfe_cfg IS BOUND.
+*
+*      IF timestamp_now <= timestamp_server AND server IS BOUND.
+*        nfe_active_server( CHANGING server_check_nfe_t = server_check_nfe_t ).
+*        EXIT.
+*      ENDIF.
+*
+*      nfe_integration( is_branch_info ).
+*      server->set_contingency_date( contingency_date ).
+*      server->set_regio( branch_address->struct-regio ).
+*
+*    ENDIF.
+*
+*    APPEND server_check_nfe TO server_check_nfe_t.
+*    EXIT.
+*
+**********************************************************************
+* NEW BODY FOR /S4TAX/I01_DFE_CHECK_ACT_SERV
+**********************************************************************
+*
+*    load_branch_information( is_branch_info ).
+*    contingency_read( is_branch_info ).
+*    dfe_server_check( is_branch_info ).
+*    initialize_dao_and_server( ).
+*    read_dfe_cfg_list( ).
+*    timestamp_cfg( ).
+*
+*    IF ls_set_cont IS NOT INITIAL AND dfe_cfg IS BOUND.
+*
+*      IF timestamp_now <= timestamp_server AND server IS BOUND.
+*        dfe_active_server( CHANGING server_check_dfe_t = server_check_dfe_t ).
+*        EXIT.
+*      ENDIF.
+*
+*      dfe_integration( is_branch_info ).
+*      server->set_contingency_date( contingency_date ).
+*      server->set_regio( branch_address->struct-regio ).
+*
+*    ENDIF.
+*
+*    APPEND server_check_dfe TO server_check_dfe_t.
+*    EXIT.
