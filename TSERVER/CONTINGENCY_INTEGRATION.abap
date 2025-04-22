@@ -1,4 +1,4 @@
-CLASS /s4tax/contingency_integration DEFINITION PUBLIC FINAL CREATE PUBLIC.
+CLASS /s4tax/contingency_integration DEFINITION PUBLIC CREATE PUBLIC.
 
   PUBLIC SECTION.
 
@@ -17,6 +17,7 @@ CLASS /s4tax/contingency_integration DEFINITION PUBLIC FINAL CREATE PUBLIC.
           server_check_nfe        TYPE j_1bnfe_server_check,
           server_check_dfe        TYPE j_1bdfe_server_check,
 
+          branch_info             TYPE j_1bnfe_branch_info,
           branch                  TYPE REF TO /s4tax/branch,
           branch_address          TYPE REF TO /s4tax/address,
           dfe_std                 TYPE REF TO /s4tax/dfe_std,
@@ -33,14 +34,16 @@ CLASS /s4tax/contingency_integration DEFINITION PUBLIC FINAL CREATE PUBLIC.
     TYPES: tt_nfe_server_check TYPE TABLE OF j_1bnfe_server_check,
            tt_dfe_server_check TYPE TABLE OF j_1bdfe_server_check.
 
-    METHODS: main  "NESSE CASO O MAIN ESTÁ SEM USO POR ENQUANTO
-      IMPORTING is_branch_info     TYPE j_1bnfe_branch_info
-      EXPORTING server_check_nfe_t TYPE tt_nfe_server_check
-                server_check_dfe_t TYPE tt_dfe_server_check.
+    METHODS:
+      constructor IMPORTING cs_branch_info TYPE j_1bnfe_branch_info OPTIONAL,
+      main IMPORTING is_main_branch_info TYPE j_1bnfe_branch_info OPTIONAL
+           EXPORTING server_check_nfe_t  TYPE tt_nfe_server_check
+                     server_check_dfe_t  TYPE tt_dfe_server_check.
 
     METHODS:
       load_branch_information IMPORTING is_branch_info TYPE j_1bnfe_branch_info,
-      contingency_read IMPORTING is_branch_info TYPE j_1bnfe_branch_info,
+      contingency_read IMPORTING is_branch_info TYPE j_1bnfe_branch_info
+                                 os_set_cont    TYPE j_1bnfe_contin OPTIONAL,
 
       nfe_server_check IMPORTING is_branch_info TYPE j_1bnfe_branch_info,
       dfe_server_check IMPORTING is_branch_info TYPE j_1bnfe_branch_info,
@@ -63,6 +66,12 @@ ENDCLASS.
 
 
 CLASS /s4tax/contingency_integration IMPLEMENTATION.
+
+  METHOD constructor.
+    IF cs_branch_info IS NOT INITIAL.
+      me->branch_info = cs_branch_info.
+    ENDIF.
+  ENDMETHOD.
 
   METHOD load_branch_information.
     dfe_std = /s4tax/dfe_std=>get_instance( ).
@@ -95,13 +104,19 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD contingency_read.
+    DATA: tmp_set_cont TYPE j_1bnfe_contin.
     dfe_std->j_1b_nfe_contingency_read( EXPORTING land1       = branch_address->struct-land1
                                                   regio       = branch_address->struct-regio
                                                   bukrs       = is_branch_info-bukrs
                                                   branch      = is_branch_info-branch
                                                   model       = is_branch_info-model
                                                   contin_type = '2'
-                                        IMPORTING es_set_cont = ls_set_cont ).
+                                        IMPORTING es_set_cont = tmp_set_cont ).
+    IF os_set_cont IS NOT INITIAL.
+      tmp_set_cont = os_set_cont.
+    ENDIF.
+
+    me->ls_set_cont = tmp_set_cont.
   ENDMETHOD.
 
   METHOD nfe_server_check.
@@ -220,12 +235,17 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD main.
-    load_branch_information( is_branch_info ).
-    contingency_read( is_branch_info ).
 
-    CASE is_branch_info-model.
-      WHEN '55'. nfe_server_check( is_branch_info ).
-      WHEN '57'. dfe_server_check( is_branch_info ).
+    IF is_main_branch_info IS NOT INITIAL.
+      me->branch_info = is_main_branch_info.
+    ENDIF.
+
+    load_branch_information( me->branch_info ).
+    contingency_read( me->branch_info ).
+
+    CASE me->branch_info-model.
+      WHEN '55'. nfe_server_check( me->branch_info ).
+      WHEN '57'. dfe_server_check( me->branch_info ).
     ENDCASE.
 
     initialize_dao_and_server( ).
@@ -234,23 +254,23 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
 
     IF ls_set_cont IS NOT INITIAL AND dfe_cfg IS BOUND.
       IF timestamp_now <= timestamp_server AND server IS BOUND.
-        CASE is_branch_info-model.
+        CASE me->branch_info-model.
           WHEN '55'. nfe_active_server( CHANGING server_check_nfe_t = server_check_nfe_t ).
           WHEN '57'. dfe_active_server( CHANGING server_check_dfe_t = server_check_dfe_t ).
         ENDCASE.
         EXIT.
       ENDIF.
 
-      CASE is_branch_info-model.
-        WHEN '55'. nfe_integration( is_branch_info ).
-        WHEN '57'. dfe_integration( is_branch_info ).
+      CASE me->branch_info-model.
+        WHEN '55'. nfe_integration( me->branch_info ).
+        WHEN '57'. dfe_integration( me->branch_info ).
       ENDCASE.
 
       server->set_contingency_date( contingency_date ).
       server->set_regio( branch_address->struct-regio ).
     ENDIF.
 
-    CASE is_branch_info-model.
+    CASE me->branch_info-model.
       WHEN '55'. APPEND server_check_nfe TO server_check_nfe_t.
       WHEN '57'. APPEND server_check_dfe TO server_check_dfe_t.
     ENDCASE.
@@ -261,24 +281,28 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
 ENDCLASS.
 
 **********************************************************************
-* NEW BODY FOR /S4TAX/I01_NFE_CHECK_ACT_SERV
+* MAIN BODY FOR /S4TAX/I01_NFE_CHECK_ACT_SERV
 *********************************************************************
 *
-*    load_branch_information( is_branch_info ).
-*    contingency_read( is_branch_info ).
-*    nfe_server_check( is_branch_info ).
-*    initialize_dao_and_server( ).
-*    read_dfe_cfg_list( ).
-*    timestamp_cfg( ).
+*    DATA: ctg_int            TYPE REF TO /s4tax/contingency_integration,
+*          server_check_nfe_t TYPE TABLE OF j_1bnfe_server_check.
+*    CREATE OBJECT ctg_int.
+*
+*    ctg_int->load_branch_information( is_branch_info ).
+*    ctg_int->contingency_read( is_branch_info ).
+*    ctg_int->nfe_server_check( is_branch_info ).
+*    ctg_int->initialize_dao_and_server( ).
+*    ctg_int->read_dfe_cfg_list( ).
+*    ctg_int->timestamp_cfg( ).
 *
 *    IF ls_set_cont IS NOT INITIAL AND dfe_cfg IS BOUND.
 *
 *      IF timestamp_now <= timestamp_server AND server IS BOUND.
-*        nfe_active_server( CHANGING server_check_nfe_t = server_check_nfe_t ).
+*        ctg_int->nfe_active_server( CHANGING server_check_nfe_t = server_check_nfe_t ).
 *        EXIT.
 *      ENDIF.
 *
-*      nfe_integration( is_branch_info ).
+*      ctg_int->nfe_integration( is_branch_info ).
 *      server->set_contingency_date( contingency_date ).
 *      server->set_regio( branch_address->struct-regio ).
 *
@@ -288,24 +312,28 @@ ENDCLASS.
 *    EXIT.
 *
 **********************************************************************
-* NEW BODY FOR /S4TAX/I01_DFE_CHECK_ACT_SERV
+* MAIN BODY FOR /S4TAX/I01_DFE_CHECK_ACT_SERV
 **********************************************************************
 *
-*    load_branch_information( is_branch_info ).
-*    contingency_read( is_branch_info ).
-*    dfe_server_check( is_branch_info ).
-*    initialize_dao_and_server( ).
-*    read_dfe_cfg_list( ).
-*    timestamp_cfg( ).
+*    DATA: ctg_int            TYPE REF TO /s4tax/contingency_integration,
+*          server_check_dfe_t TYPE TABLE OF j_1bdfe_server_check.
+*    CREATE OBJECT ctg_int.
+*
+*    ctg_int->load_branch_information( is_branch_info ).
+*    ctg_int->contingency_read( is_branch_info ).
+*    ctg_int->dfe_server_check( is_branch_info ).
+*    ctg_int->initialize_dao_and_server( ).
+*    ctg_int->read_dfe_cfg_list( ).
+*    ctg_int->timestamp_cfg( ).
 *
 *    IF ls_set_cont IS NOT INITIAL AND dfe_cfg IS BOUND.
 *
 *      IF timestamp_now <= timestamp_server AND server IS BOUND.
-*        dfe_active_server( CHANGING server_check_dfe_t = server_check_dfe_t ).
+*        ctg_int->dfe_active_server( CHANGING server_check_dfe_t = server_check_dfe_t ).
 *        EXIT.
 *      ENDIF.
 *
-*      dfe_integration( is_branch_info ).
+*      ctg_int->dfe_integration( is_branch_info ).
 *      server->set_contingency_date( contingency_date ).
 *      server->set_regio( branch_address->struct-regio ).
 *
