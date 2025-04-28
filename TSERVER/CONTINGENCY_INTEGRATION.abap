@@ -47,7 +47,7 @@ CLASS /s4tax/contingency_integration DEFINITION PUBLIC CREATE PUBLIC.
                      ot_server_check_dfe_t TYPE tt_dfe_server_check .
 
     METHODS:
-      load_branch_information IMPORTING is_branch_info TYPE j_1bnfe_branch_info,
+      load_branch_information,
       contingency_read,
 
       nfe_server_check,
@@ -80,9 +80,9 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
 
   METHOD load_branch_information.
     dfe_std = /s4tax/dfe_std=>get_instance( ).
-    dfe_std->j_1bnfe_cust3_read( EXPORTING bukrs  = is_branch_info-bukrs
-                                           branch = is_branch_info-branch
-                                           model  = is_branch_info-model
+    dfe_std->j_1bnfe_cust3_read( EXPORTING bukrs  = me->branch_info-bukrs
+                                           branch = me->branch_info-branch
+                                           model  = me->branch_info-model
                                  IMPORTING cust3  = cust3 ).
 
 * Check is not executed in following cases: 1) when no entry exists in customizing  2) automatic server determination is not active in customizing
@@ -92,12 +92,15 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
 
     dao_pack_model_business = /s4tax/dao_pack_model_business=>default_instance( ).
     dao_branch = dao_pack_model_business->branch( ).
-    branch = dao_branch->get( company_code = is_branch_info-bukrs
-                              branch_code  = is_branch_info-branch ).
+    branch = dao_branch->get( company_code = me->branch_info-bukrs
+                              branch_code  = me->branch_info-branch ).
 
     IF branch IS NOT BOUND.
       EXIT.
     ENDIF.
+
+    TEST-SEAM inj_mock_branch_address.
+    END-TEST-SEAM.
 
     dal_branch = dao_pack_model_business->branch_dal( ).
     dal_branch->fill_branch_data( branch ).
@@ -109,6 +112,7 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD contingency_read.
+    CREATE OBJECT ME->dfe_std.
     dfe_std->j_1b_nfe_contingency_read( EXPORTING land1       = branch_address->struct-land1
                                                   regio       = branch_address->struct-regio
                                                   bukrs       = me->branch_info-bukrs
@@ -240,7 +244,7 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
       me->branch_info = is_main_branch_info.
     ENDIF.
 
-    load_branch_information( me->branch_info ).
+    load_branch_information( ).
     contingency_read( ).
 
     CASE me->branch_info-model.
@@ -288,9 +292,9 @@ ENDCLASS.
 *          server_check_nfe_t TYPE TABLE OF j_1bnfe_server_check.
 *    CREATE OBJECT ctg_int.
 *
-*    ctg_int->load_branch_information( is_branch_info ).
-*    ctg_int->contingency_read( is_branch_info ).
-*    ctg_int->nfe_server_check( is_branch_info ).
+*    ctg_int->load_branch_information( ).
+*    ctg_int->contingency_read( ).
+*    ctg_int->nfe_server_check( ).
 *    ctg_int->initialize_dao_and_server( ).
 *    ctg_int->read_dfe_cfg_list( ).
 *    ctg_int->timestamp_cfg( ).
@@ -302,7 +306,7 @@ ENDCLASS.
 *        EXIT.
 *      ENDIF.
 *
-*      ctg_int->nfe_integration( is_branch_info ).
+*      ctg_int->nfe_integration( ).
 *      server->set_contingency_date( contingency_date ).
 *      server->set_regio( branch_address->struct-regio ).
 *
@@ -319,9 +323,9 @@ ENDCLASS.
 *          server_check_dfe_t TYPE TABLE OF j_1bdfe_server_check.
 *    CREATE OBJECT ctg_int.
 *
-*    ctg_int->load_branch_information( is_branch_info ).
-*    ctg_int->contingency_read( is_branch_info ).
-*    ctg_int->dfe_server_check( is_branch_info ).
+*    ctg_int->load_branch_information( ).
+*    ctg_int->contingency_read( ).
+*    ctg_int->dfe_server_check( ).
 *    ctg_int->initialize_dao_and_server( ).
 *    ctg_int->read_dfe_cfg_list( ).
 *    ctg_int->timestamp_cfg( ).
@@ -333,7 +337,7 @@ ENDCLASS.
 *        EXIT.
 *      ENDIF.
 *
-*      ctg_int->dfe_integration( is_branch_info ).
+*      ctg_int->dfe_integration( ).
 *      server->set_contingency_date( contingency_date ).
 *      server->set_regio( branch_address->struct-regio ).
 *
