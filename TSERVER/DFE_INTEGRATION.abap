@@ -159,10 +159,9 @@ CLASS /s4tax/dfe_integration DEFINITION
         IMPORTING dfe_output    TYPE /s4tax/iapi_dfe=>nfe_recepcao_evento_output
         RETURNING VALUE(result) TYPE /s4tax/s_nfe_recepcao_evento_o,
 
-      save_svc IMPORTING output        TYPE /s4tax/s_status_servico_o
-                         regio         TYPE /s4tax/tserver-regio
-                         model         TYPE /s4tax/tserver-model
-                         active_server TYPE /s4tax/active_server,
+      save_svc IMPORTING output TYPE /s4tax/s_status_servico_o
+                         regio  TYPE /s4tax/tserver-regio
+                         model  TYPE /s4tax/tserver-model,
 
       get_xml_from_local_repository
         IMPORTING access_key    TYPE j_1b_nfe_access_key
@@ -805,27 +804,81 @@ CLASS /s4tax/dfe_integration IMPLEMENTATION.
       CATCH cx_sy_conversion_no_date_time.
     ENDTRY.
 
+
     IF  nfe_contingency_control-cont_reason_reg = /s4tax/dfe_constants=>svc_reason-active
-    AND consulta_output-main-active = abap_true AND consulta_output-svc-active = abap_false.
+    AND consulta_output-svc-active = abap_false.
 
       nfe_contingency_control-cont_reason_reg = /s4tax/dfe_constants=>svc_reason-default.
       nfe_contingency_control-xi_out          = 'X'.
       dfe_std = /s4tax/dfe_std=>get_instance( ).
       dfe_std->j_1b_nfe_contingency_update( update_contigency = nfe_contingency_control ).
-      save_svc( EXPORTING output        = consulta_output
-                          active_server = 'MAIN'
-                          regio         = regio
-                          model         = model ).
+
+    ENDIF.
+
+    IF ( consulta_output-main-active = abap_false AND consulta_output-svc-active  = abap_true )
+    OR nfe_contingency_control-cont_reason_reg = /s4tax/dfe_constants=>svc_reason-active.
+
+      get_svc_code_sap( EXPORTING svc_authorizer = consulta_output-svc-authorizer CHANGING server_status = server_status ).
+      CLEAR server_status-sefaz_active.
+
+    ENDIF.
+
+    save_svc( EXPORTING output = consulta_output
+                        regio  = regio
+                        model  = model ).
+  ENDMETHOD.
+
+
+  METHOD save_svc.
+
+    DATA: active           TYPE /s4tax/tserver-active_server,
+          authorizer       TYPE /s4tax/tserver-authorizer,
+          environment_type TYPE /s4tax/tserver-environment_type,
+          dao_server       TYPE REF TO /s4tax/idao_server,
+          date             TYPE REF TO /s4tax/date,
+          server           TYPE REF TO /s4tax/server,
+          contingency_date TYPE /s4tax/e_last_status.
+
+    dao_server = /s4tax/dao_server=>get_instance(  ).
+
+    IF dao_server IS NOT BOUND.
       RETURN.
     ENDIF.
 
-    get_svc_code_sap( EXPORTING svc_authorizer = consulta_output-svc-authorizer CHANGING server_status = server_status ).
-    CLEAR server_status-sefaz_active.
-    save_svc( EXPORTING output        = consulta_output
-                        active_server = 'SVC'
-                        regio         = regio
-                        model         = model ).
+    CREATE OBJECT server.
+
+    IF output-main-active = abap_true.
+
+      active = 'MAIN'.
+      authorizer = output-main-authorizer.
+      environment_type = output-main-tp_amb.
+      date = /s4tax/date=>create_by_utc( output-main-date ).
+
+    ELSE.
+
+      active = 'SVC'.
+      authorizer = output-svc-authorizer.
+      environment_type = output-svc-tp_amb.
+      date = /s4tax/date=>create_by_utc( output-svc-date ).
+
+    ENDIF.
+
+    contingency_date = date->to_timestamp( ).
+    server->set_regio( regio ).
+    server->set_model( model ).
+    server->set_active_server( active ).
+    server->set_authorizer( authorizer ).
+    server->set_environment_type( environment_type ).
+    server->set_contingency_date( contingency_date ).
+
+    IF server IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    dao_server->save( server ).
+
   ENDMETHOD.
+
 
 
   METHOD get_svc_code_sap.
@@ -1131,56 +1184,6 @@ CLASS /s4tax/dfe_integration IMPLEMENTATION.
 
   ENDMETHOD.
 
-
-  METHOD save_svc.
-
-    DATA: active           TYPE /s4tax/tserver-active_server,
-          authorizer       TYPE /s4tax/tserver-authorizer,
-          environment_type TYPE /s4tax/tserver-environment_type,
-          dao_server       TYPE REF TO /s4tax/idao_server,
-          date             TYPE REF TO /s4tax/date,
-          server           TYPE REF TO /s4tax/server,
-          contingency_date TYPE /s4tax/e_last_status.
-
-    dao_server = /s4tax/dao_server=>get_instance(  ).
-
-    IF dao_server IS NOT BOUND.
-      RETURN.
-    ENDIF.
-
-    CREATE OBJECT server.
-
-    IF active_server = 'MAIN'.
-
-      active = 'MAIN'.
-      authorizer = output-main-authorizer.
-      environment_type = output-main-tp_amb.
-      date = /s4tax/date=>create_by_utc( output-main-date ).
-
-    ELSE.
-
-      active = 'SVC'.
-      authorizer = output-svc-authorizer.
-      environment_type = output-svc-tp_amb.
-      date = /s4tax/date=>create_by_utc( output-svc-date ).
-
-    ENDIF.
-
-    contingency_date = date->to_timestamp( ).
-    server->set_regio( regio ).
-    server->set_model( model ).
-    server->set_active_server( active ).
-    server->set_authorizer( authorizer ).
-    server->set_environment_type( environment_type ).
-    server->set_contingency_date( contingency_date ).
-
-    IF server IS NOT BOUND.
-      RETURN.
-    ENDIF.
-
-    dao_server->save( server ).
-
-  ENDMETHOD.
 
 
   METHOD get_xml_from_local_repository.

@@ -67,10 +67,9 @@ PRIVATE SECTION.
 
     save_event IMPORTING event TYPE REF TO /s4tax/dfeevent,
 
-    save_svc IMPORTING output        TYPE /s4tax/s_status_servico_o
-                       regio         TYPE /s4tax/tserver-regio
-                       model         TYPE /s4tax/tserver-model
-                       active_server TYPE /s4tax/active_server,
+    save_svc IMPORTING output TYPE /s4tax/s_status_servico_o
+                       regio  TYPE /s4tax/tserver-regio
+                       model  TYPE /s4tax/tserver-model,
 
     fill_cte_input IMPORTING cte_data      TYPE REF TO /s4tax/dfe_integration_cte
                              branch_config TYPE REF TO /s4tax/branch_config
@@ -710,25 +709,26 @@ METHOD dfe_check_active_server.
   ENDTRY.
 
   IF  dfe_contingency_control-cont_reason_reg = /s4tax/dfe_constants=>svc_reason-active
-  AND consulta_output-main-active = abap_true AND consulta_output-svc-active = abap_false.
+  AND consulta_output-svc-active = abap_false.
 
     dfe_contingency_control-cont_reason_reg = /s4tax/dfe_constants=>svc_reason-default.
     dfe_contingency_control-xi_out = 'X'.
     dfe_std = /s4tax/dfe_std=>get_instance( ).
     dfe_std->j_1b_nfe_contingency_update( update_contigency = dfe_contingency_control ).
-    save_svc( EXPORTING output        = consulta_output
-                        active_server = 'MAIN'
-                        regio         = regio
-                        model         = model ).
-    RETURN.
+
   ENDIF.
 
-  CLEAR server_status-active_service.
-  server_status-active_service = get_svc_code_sap( svc_authorizer = consulta_output-svc-authorizer regio = dfe_contingency_control-regio ).
-  save_svc( EXPORTING output        = consulta_output
-                      active_server = 'SVC'
-                      regio         = regio
-                      model         = model ).
+  IF ( consulta_output-main-active = abap_false AND consulta_output-svc-active  = abap_true )
+  OR dfe_contingency_control-cont_reason_reg = /s4tax/dfe_constants=>svc_reason-active.
+
+    CLEAR server_status-active_service.
+    server_status-active_service = get_svc_code_sap( svc_authorizer = consulta_output-svc-authorizer regio = dfe_contingency_control-regio ).
+
+  ENDIF.
+
+  save_svc( EXPORTING output = consulta_output
+                      regio  = regio
+                      model  = model ).
 ENDMETHOD.
 
 
@@ -765,7 +765,7 @@ METHOD save_svc.
 
   CREATE OBJECT server.
 
-  IF active_server = 'MAIN'.
+  IF output-main-active = abap_true.
 
     active = 'MAIN'.
     authorizer = output-main-authorizer.
