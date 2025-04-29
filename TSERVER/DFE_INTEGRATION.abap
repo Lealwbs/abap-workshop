@@ -806,34 +806,25 @@ CLASS /s4tax/dfe_integration IMPLEMENTATION.
     ENDTRY.
 
     IF  nfe_contingency_control-cont_reason_reg = /s4tax/dfe_constants=>svc_reason-active
-    AND consulta_output-svc-active = abap_false.
+    AND consulta_output-main-active = abap_true AND consulta_output-svc-active = abap_false.
 
       nfe_contingency_control-cont_reason_reg = /s4tax/dfe_constants=>svc_reason-default.
       nfe_contingency_control-xi_out          = 'X'.
       dfe_std = /s4tax/dfe_std=>get_instance( ).
       dfe_std->j_1b_nfe_contingency_update( update_contigency = nfe_contingency_control ).
-
       save_svc( EXPORTING output        = consulta_output
                           active_server = 'MAIN'
                           regio         = regio
                           model         = model ).
-
       RETURN.
     ENDIF.
 
-    IF ( consulta_output-main-active = abap_false AND consulta_output-svc-active  = abap_true )
-    OR  nfe_contingency_control-cont_reason_reg = /s4tax/dfe_constants=>svc_reason-active.
-
-      get_svc_code_sap( EXPORTING svc_authorizer = consulta_output-svc-authorizer
-                        CHANGING  server_status  = server_status ).
-
-      save_svc( EXPORTING output        = consulta_output
-                          active_server = 'SVC'
-                          regio         = regio
-                          model         = model ).
-      CLEAR server_status-sefaz_active.
-    ENDIF.
-
+    get_svc_code_sap( EXPORTING svc_authorizer = consulta_output-svc-authorizer CHANGING server_status = server_status ).
+    CLEAR server_status-sefaz_active.
+    save_svc( EXPORTING output        = consulta_output
+                        active_server = 'SVC'
+                        regio         = regio
+                        model         = model ).
   ENDMETHOD.
 
 
@@ -1273,14 +1264,16 @@ CLASS /s4tax/dfe_integration IMPLEMENTATION.
       xml_item TYPE /s4tax/tdfe_xml,
       date     TYPE REF TO /s4tax/date,
       dfe_xml  TYPE REF TO /s4tax/dfe_xml,
-      dao_dfe  TYPE REF TO /s4tax/idao_dfe_xml.
+      dao_dfe  TYPE REF TO /s4tax/idao_dfe_xml,
+      active   TYPE REF TO /s4tax/doc_active.
 
     IF doc IS NOT BOUND.
       RETURN.
     ENDIF.
 
     MOVE-CORRESPONDING doc->struct TO xml_item.
-    xml_item-dockey = doc->get_active( )->get_access_key( ).
+    active = doc->get_active( ).
+    xml_item-dockey = active->get_access_key( ).
     xml_item-source = '01'. "Alterar para obter valor de uma CFG
     xml_item-xmlraw = xml.
     xml_item-created_by = sy-uname.

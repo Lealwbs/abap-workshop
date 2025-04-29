@@ -709,36 +709,26 @@ METHOD dfe_check_active_server.
     CATCH cx_sy_conversion_no_date_time.
   ENDTRY.
 
-
   IF  dfe_contingency_control-cont_reason_reg = /s4tax/dfe_constants=>svc_reason-active
-  AND consulta_output-svc-active = abap_false.
+  AND consulta_output-main-active = abap_true AND consulta_output-svc-active = abap_false.
 
     dfe_contingency_control-cont_reason_reg = /s4tax/dfe_constants=>svc_reason-default.
     dfe_contingency_control-xi_out = 'X'.
     dfe_std = /s4tax/dfe_std=>get_instance( ).
     dfe_std->j_1b_nfe_contingency_update( update_contigency = dfe_contingency_control ).
-
-    save_svc( EXPORTING output = consulta_output
+    save_svc( EXPORTING output        = consulta_output
                         active_server = 'MAIN'
-                        regio = regio
-                        model = model ).
-
+                        regio         = regio
+                        model         = model ).
     RETURN.
   ENDIF.
 
-  IF ( consulta_output-main-active = abap_false AND consulta_output-svc-active  = abap_true )
-  OR dfe_contingency_control-cont_reason_reg = /s4tax/dfe_constants=>svc_reason-active.
-
-    CLEAR server_status-active_service.
-    server_status-active_service = get_svc_code_sap( svc_authorizer = consulta_output-svc-authorizer regio = dfe_contingency_control-regio ).
-
-    save_svc( EXPORTING output = consulta_output
-                 active_server = 'SVC'
-                         regio = regio
-                         model = model ).
-
-  ENDIF.
-
+  CLEAR server_status-active_service.
+  server_status-active_service = get_svc_code_sap( svc_authorizer = consulta_output-svc-authorizer regio = dfe_contingency_control-regio ).
+  save_svc( EXPORTING output        = consulta_output
+                      active_server = 'SVC'
+                      regio         = regio
+                      model         = model ).
 ENDMETHOD.
 
 

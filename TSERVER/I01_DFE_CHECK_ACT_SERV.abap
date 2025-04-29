@@ -90,31 +90,29 @@ ENDIF.
 CREATE OBJECT today_date EXPORTING date = sy-datum time = sy-timlo.
 timestamp_now = today_date->to_timestamp( ).
 
+IF server IS BOUND.
 status_update_time = dfe_cfg->get_status_update_time( ).
 contingency_date = server->get_contingency_date( ).
 timestamp_server = today_date->to_time_timestamp( time = status_update_time timestamp = contingency_date ).
 
-IF timestamp_now <= timestamp_server AND server IS BOUND.
+IF timestamp_now <= timestamp_server.
 
 IF server->struct-active_server = 'SVC'.
-
-CLEAR server_check-active_service.
-
-CASE  branch_address->struct-regio.
-  WHEN 'AP' OR 'SP' OR 'MT' OR 'MS' OR 'PE' OR 'RR'.
-    server_check-active_service  = /s4tax/dfe_constants=>svc_code_sap-rs.
-
-  WHEN OTHERS.
-    server_check-active_service  = /s4tax/dfe_constants=>svc_code_sap-sp.
-
-ENDCASE.
-
+  CLEAR server_check-active_service.
+  CASE  branch_address->struct-regio.
+    WHEN 'AP' OR 'SP' OR 'MT' OR 'MS' OR 'PE' OR 'RR'.
+      server_check-active_service  = /s4tax/dfe_constants=>svc_code_sap-rs.
+    WHEN OTHERS.
+      server_check-active_service  = /s4tax/dfe_constants=>svc_code_sap-sp.
+  ENDCASE.
 ENDIF.
 
 server_check-checktmpl = server->struct-contingency_date.
 APPEND server_check TO gt_server_check.
 
 EXIT.
+ENDIF.
+
 ENDIF.
 
 defaults      = /s4tax/defaults=>get_default_instance( ).
