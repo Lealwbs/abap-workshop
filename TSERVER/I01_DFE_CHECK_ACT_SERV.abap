@@ -7,38 +7,14 @@ tmp_test_value = '0'.
 
 IF tmp_test_value EQ '1'.
 
-  DATA: ctg_int TYPE REF TO /s4tax/contingency_integration.
+  DATA: ctg_int         TYPE REF TO /s4tax/contingency_integration,
+        tmp_branch_info TYPE !j_1bnfe_branch_info.
+
   CREATE OBJECT ctg_int.
+  tmp_branch_info = is_branch_info.
 
-  ctg_int->load_branch_information( ).
-  ctg_int->contingency_read( ).
-  ctg_int->dfe_server_check( ).
-  ctg_int->initialize_dao_and_server( ).
-
-  IF ctg_int->ls_set_cont IS NOT INITIAL AND ctg_int->dfe_cfg_list IS NOT INITIAL.
-    ctg_int->read_dfe_cfg_list( ).
-    ctg_int->get_timestamp_now( ).
-
-    IF ctg_int->server IS BOUND.
-      ctg_int->get_timestamp_server( ).
-      IF ctg_int->timestamp_now <= ctg_int->timestamp_server.
-        ctg_int->dfe_active_server( ).
-        APPEND ctg_int->server_check_dfe TO gt_server_check.
-        EXIT.
-      ENDIF.
-    ENDIF.
-
-    ctg_int->dfe_integration( ).
-  ENDIF.
-
-  APPEND ctg_int->server_check_dfe TO gt_server_check.
-  EXIT.
-
-ELSEIF tmp_test_value EQ '2'.
-
-  DATA: ctg_int2 TYPE REF TO /s4tax/contingency_integration.
-  CREATE OBJECT ctg_int2.
-  ctg_int2->main( CHANGING ot_server_check_dfe_t = gt_server_check ).
+  ctg_int->run_contingency_process( CHANGING is_main_branch_info   = tmp_branch_info
+                                             ot_server_check_dfe_t = gt_server_check ).
 
 ELSEIF tmp_test_value EQ '0'.
 

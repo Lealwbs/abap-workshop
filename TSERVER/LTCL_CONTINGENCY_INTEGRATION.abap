@@ -4,33 +4,37 @@ CLASS ltcl_contingency_integration DEFINITION FINAL FOR TESTING
 
   PRIVATE SECTION.
 
-    CLASS-DATA: db_mock TYPE REF TO if_osql_test_environment.
+    CLASS-DATA: db_mock             TYPE REF TO if_osql_test_environment,
+                test_double         TYPE REF TO /s4tax/contingency_integration,
+                db_mock_branch      TYPE REF TO if_osql_test_environment,
 
-    DATA: test_double         TYPE REF TO /s4tax/contingency_integration,
-          mock_branch_info    TYPE j_1bnfe_branch_info,
-          mock_cust3          TYPE j_1bnfe_cust3,
-          mock_branch         TYPE REF TO /s4tax/branch,
-          mock_branch_address TYPE REF TO /s4tax/address,
-          db_mock_branch      TYPE REF TO if_osql_test_environment.
+                mock_branch_info    TYPE j_1bnfe_branch_info,
+                mock_cust3          TYPE j_1bnfe_cust3,
+                mock_branch         TYPE REF TO /s4tax/branch,
+                mock_branch_address TYPE REF TO /s4tax/address.
 
-    DATA: cut                TYPE REF TO /s4tax/contingency_integration.
-
+    DATA: cut TYPE REF TO /s4tax/contingency_integration.
 
     CLASS-METHODS: class_setup, class_teardown.
     METHODS: setup, teardown.
 
     METHODS:
       test_load_branch_information FOR TESTING,
-      test_contingency_read FOR TESTING,
-      test_nfe_server_check FOR TESTING,
-      test_dfe_server_check FOR TESTING,
+      test_read_contingency_config FOR TESTING,
+
+      test_mount_server_check_nfe FOR TESTING,
+      test_mount_server_check_dfe FOR TESTING,
+
       test_initialize_dao_and_server FOR TESTING,
       test_read_dfe_cfg_list FOR TESTING,
-      test_get_timestamp FOR TESTING,
-      test_nfe_active_server FOR TESTING,
-      test_dfe_active_server FOR TESTING,
-      test_nfe_integration FOR TESTING,
-      test_dfe_integration FOR TESTING.
+      test_get_timestamp_now FOR TESTING,
+      test_get_timestamp_server FOR TESTING,
+
+      test_update_svc_srv_check_nfe FOR TESTING,
+      test_update_svc_srv_check_dfe FOR TESTING,
+
+      test_run_nfe_check_active_srv FOR TESTING,
+      test_run_dfe_check_active_srv FOR TESTING.
 
 ENDCLASS.
 
@@ -39,13 +43,6 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
 
   METHOD class_setup.
 *    db_mock = cl_osql_test_environment=>create( i_dependency_list = VALUE #( ( '/S4TAX/j_1bbranch'  ) ) ).
-  ENDMETHOD.
-
-  METHOD class_teardown.
-*    db_mock->destroy(  ).
-  ENDMETHOD.
-
-  METHOD setup.
 
     test_double ?= cl_abap_testdouble=>create( '/S4TAX/CONTINGENCY_INTEGRATION' ).
 
@@ -83,16 +80,21 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
         regio  = 'MG'
         natio  = 'BR'  ) ).
 
+  ENDMETHOD.
 
+  METHOD class_teardown.
+*    db_mock->destroy(  ).
+  ENDMETHOD.
+
+  METHOD setup.
     cut = NEW #( cs_branch_info = mock_branch_info ).
     cut->cust3 = mock_cust3.
     cut->branch = mock_branch.
     cut->branch_address = mock_branch_address.
-
   ENDMETHOD.
 
   METHOD teardown.
-    CLEAR: cut, mock_branch_info, mock_cust3.
+    CLEAR: cut.
   ENDMETHOD.
 
   METHOD test_load_branch_information.
@@ -116,7 +118,7 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
     cl_abap_unit_assert=>assert_bound( act = cut->branch_address msg = 'Branch address should be set.' ).
   ENDMETHOD.
 
-  METHOD test_contingency_read.
+  METHOD test_read_contingency_config.
     cl_abap_unit_assert=>assert_initial( cut->ls_set_cont ).
 
     CREATE OBJECT cut->dfe_std.
@@ -138,7 +140,7 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
 
     INSERT j_1bnfe_contin FROM exp_set_cont.
 
-    cut->contingency_read(  ).
+    cut->read_contingency_config(  ).
 *   cl_abap_unit_assert=>fail( msg = 'test contingency read needs correction' level = if_abap_unit_constant=>severity-low ).
     cut->ls_set_cont = exp_set_cont. "PROBLEM
 
@@ -151,10 +153,10 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = cut->ls_set_cont-contin_type exp = exp_set_cont-contin_type ).
   ENDMETHOD.
 
-  METHOD test_nfe_server_check.
+  METHOD test_mount_server_check_nfe.
     cl_abap_unit_assert=>assert_initial( cut->server_check_nfe ).
 
-    cut->nfe_server_check( ).
+    cut->mount_server_check_nfe( ).
 
     cl_abap_unit_assert=>assert_not_initial( cut->server_check_nfe ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-regio exp = mock_branch_info-regio ).
@@ -165,10 +167,10 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-scan_active exp = '' ).
   ENDMETHOD.
 
-  METHOD test_dfe_server_check.
+  METHOD test_mount_server_check_dfe.
     cl_abap_unit_assert=>assert_initial( cut->server_check_dfe ).
 
-    cut->dfe_server_check( ).
+    cut->mount_server_check_dfe( ).
 
     cl_abap_unit_assert=>assert_not_initial( cut->server_check_dfe ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_dfe-cnpj exp = mock_branch_info-bukrs ).
@@ -236,34 +238,41 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = cut->dfe_cfg->get_status_update_time( ) exp = exp_struct-status_update_time ).
   ENDMETHOD.
 
-  METHOD test_get_timestamp.
+  METHOD test_get_timestamp_now.
     cl_abap_unit_assert=>assert_initial( cut->today_date ).
     cl_abap_unit_assert=>assert_initial( cut->timestamp_now ).
+
+    cut->get_timestamp_now( ).
+
+    cl_abap_unit_assert=>assert_not_initial( cut->today_date ).
+    cl_abap_unit_assert=>assert_not_initial( cut->timestamp_now ).
+  ENDMETHOD.
+
+  METHOD test_get_timestamp_server.
     cl_abap_unit_assert=>assert_initial( cut->status_update_time ).
     cl_abap_unit_assert=>assert_initial( cut->contingency_date ).
     cl_abap_unit_assert=>assert_initial( cut->timestamp_server ).
 
-    CREATE: OBJECT cut->dfe_cfg, OBJECT cut->server.
+    CREATE: OBJECT cut->dfe_cfg,
+            OBJECT cut->server,
+            OBJECT cut->today_date EXPORTING date = sy-datum time = sy-timlo.
     cut->dfe_cfg->set_status_update_time( '130726' ).
     cut->server->set_contingency_date( '20260425113422' ).
 
-    cut->get_timestamp_now( ).
     cut->get_timestamp_server( ).
 
-    cl_abap_unit_assert=>assert_not_initial( cut->today_date ).
-    cl_abap_unit_assert=>assert_not_initial( cut->timestamp_now ).
     cl_abap_unit_assert=>assert_not_initial( cut->status_update_time ).
     cl_abap_unit_assert=>assert_not_initial( cut->contingency_date ).
     cl_abap_unit_assert=>assert_not_initial( cut->timestamp_server ).
   ENDMETHOD.
 
-  METHOD test_nfe_active_server.
+  METHOD test_update_svc_srv_check_nfe.
     CREATE OBJECT cut->server.
     cut->server->set_active_server( 'SVC' ).
 
     CLEAR: cut->server_check_nfe-svc_rs_active, cut->server_check_nfe-svc_sp_active, cut->server_check_nfe-svc_active.
     cut->server->set_authorizer( 'SVC-RS' ).
-    cut->nfe_active_server( ).
+    cut->update_svc_server_check_nfe( ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_rs_active exp = 'X' ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_sp_active exp = ' ' ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_active    exp = ' ' ).
@@ -271,7 +280,7 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
 
     CLEAR: cut->server_check_nfe-svc_rs_active, cut->server_check_nfe-svc_sp_active, cut->server_check_nfe-svc_active.
     cut->server->set_authorizer( 'SVC-SP' ).
-    cut->nfe_active_server( ).
+    cut->update_svc_server_check_nfe( ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_rs_active exp = ' ' ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_sp_active exp = 'X' ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_active    exp = ' ' ).
@@ -279,7 +288,7 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
 
     CLEAR: cut->server_check_nfe-svc_rs_active, cut->server_check_nfe-svc_sp_active, cut->server_check_nfe-svc_active.
     cut->server->set_authorizer( 'SVC-AN' ).
-    cut->nfe_active_server( ).
+    cut->update_svc_server_check_nfe( ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_rs_active exp = ' ' ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_sp_active exp = ' ' ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_active    exp = 'X' ).
@@ -287,7 +296,7 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
 
     CLEAR: cut->server_check_nfe-svc_rs_active, cut->server_check_nfe-svc_sp_active, cut->server_check_nfe-svc_active.
     cut->server->set_active_server( 'MAIN' ).
-    cut->nfe_active_server( ).
+    cut->update_svc_server_check_nfe( ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_rs_active exp = ' ' ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_sp_active exp = ' ' ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_active    exp = ' ' ).
@@ -295,40 +304,40 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
 
     cut->server->set_contingency_date( '24042025' ).
     cl_abap_unit_assert=>assert_initial( act = cut->server_check_nfe-checktmpl ).
-    cut->nfe_active_server( ).
+    cut->update_svc_server_check_nfe( ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-checktmpl exp = '24042025').
   ENDMETHOD.
 
-  METHOD test_dfe_active_server.
+  METHOD test_update_svc_srv_check_dfe.
     CREATE: OBJECT cut->server, OBJECT cut->branch_address.
     cut->server->set_active_server( 'SVC' ).
 
     CLEAR: cut->server_check_dfe-active_service.
     cut->branch_address->set_regio( 'AP' ).
-    cut->dfe_active_server( ).
+    cut->update_svc_server_check_dfe( ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_dfe-active_service exp = /s4tax/dfe_constants=>svc_code_sap-rs ).
 
 
     CLEAR: cut->server_check_dfe-active_service.
     cut->branch_address->set_regio( 'BR' ).
-    cut->dfe_active_server( ).
+    cut->update_svc_server_check_dfe( ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_dfe-active_service exp = /s4tax/dfe_constants=>svc_code_sap-sp ).
 
 
     CLEAR: cut->server_check_dfe-active_service.
     cut->server->set_active_server( 'MAIN' ).
     cut->branch_address->set_regio( 'SP' ).
-    cut->dfe_active_server( ).
+    cut->update_svc_server_check_dfe( ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_dfe-active_service exp = '' ).
 
 
     cut->server->set_contingency_date( '24042025' ).
     cl_abap_unit_assert=>assert_initial( act = cut->server_check_dfe-checktmpl ).
-    cut->dfe_active_server( ).
+    cut->update_svc_server_check_dfe( ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_dfe-checktmpl exp = '24042025').
   ENDMETHOD.
 
-  METHOD test_nfe_integration.
+  METHOD test_run_nfe_check_active_srv.
     cl_abap_unit_assert=>assert_initial( cut->server_check_nfe ).
     cl_abap_unit_assert=>assert_initial( cut->ls_set_cont ).
     cl_abap_unit_assert=>assert_initial( cut->contingency_date ).
@@ -366,7 +375,7 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
 *    "double_dfe_intg->nfe_check_active_server(  ).
 ***********
 
-    cut->nfe_integration( ).
+    cut->run_nfe_check_active_server( ).
 
 *   cl_abap_unit_assert=>fail( msg = 'test_dfe_integration needs correction' level = if_abap_unit_constant=>severity-low ).
     cut->server_check_nfe = mock_nfe_server_check.   "PROBLEM
@@ -378,7 +387,7 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
     cl_abap_unit_assert=>assert_not_initial( cut->contingency_date ).
   ENDMETHOD.
 
-  METHOD test_dfe_integration.
+  METHOD test_run_dfe_check_active_srv.
     cl_abap_unit_assert=>assert_initial( cut->server_check_nfe ).
     cl_abap_unit_assert=>assert_initial( cut->ls_set_cont ).
 
@@ -419,7 +428,7 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
 *                                                 dfe_contingency_control = mock_set_cont ).
 ***********
 
-    cut->dfe_integration( ).
+    cut->run_dfe_check_active_server( ).
 
 *   cl_abap_unit_assert=>fail( msg = 'test_dfe_integration needs correction' level = if_abap_unit_constant=>severity-low ).
     cut->server_check_dfe = mock_dfe_server_check.   "PROBLEM
