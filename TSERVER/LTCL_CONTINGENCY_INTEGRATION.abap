@@ -26,7 +26,7 @@ CLASS ltcl_contingency_integration DEFINITION FINAL FOR TESTING
       test_dfe_server_check FOR TESTING,
       test_initialize_dao_and_server FOR TESTING,
       test_read_dfe_cfg_list FOR TESTING,
-      test_timestamp_cfg FOR TESTING,
+      test_get_timestamp FOR TESTING,
       test_nfe_active_server FOR TESTING,
       test_dfe_active_server FOR TESTING,
       test_nfe_integration FOR TESTING,
@@ -236,7 +236,7 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = cut->dfe_cfg->get_status_update_time( ) exp = exp_struct-status_update_time ).
   ENDMETHOD.
 
-  METHOD test_timestamp_cfg.
+  METHOD test_get_timestamp.
     cl_abap_unit_assert=>assert_initial( cut->today_date ).
     cl_abap_unit_assert=>assert_initial( cut->timestamp_now ).
     cl_abap_unit_assert=>assert_initial( cut->status_update_time ).
@@ -247,7 +247,8 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
     cut->dfe_cfg->set_status_update_time( '130726' ).
     cut->server->set_contingency_date( '20260425113422' ).
 
-    cut->timestamp_cfg( ).
+    cut->get_timestamp_now( ).
+    cut->get_timestamp_server( ).
 
     cl_abap_unit_assert=>assert_not_initial( cut->today_date ).
     cl_abap_unit_assert=>assert_not_initial( cut->timestamp_now ).
@@ -259,8 +260,6 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
   METHOD test_nfe_active_server.
     CREATE OBJECT cut->server.
     cut->server->set_active_server( 'SVC' ).
-    cl_abap_unit_assert=>assert_equals( act = lines( cut->server_check_nfe_t ) exp = 0 ).
-
 
     CLEAR: cut->server_check_nfe-svc_rs_active, cut->server_check_nfe-svc_sp_active, cut->server_check_nfe-svc_active.
     cut->server->set_authorizer( 'SVC-RS' ).
@@ -268,7 +267,6 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_rs_active exp = 'X' ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_sp_active exp = ' ' ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_active    exp = ' ' ).
-    cl_abap_unit_assert=>assert_equals( act = lines( cut->server_check_nfe_t ) exp = 1 ).
 
 
     CLEAR: cut->server_check_nfe-svc_rs_active, cut->server_check_nfe-svc_sp_active, cut->server_check_nfe-svc_active.
@@ -277,7 +275,6 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_rs_active exp = ' ' ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_sp_active exp = 'X' ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_active    exp = ' ' ).
-    cl_abap_unit_assert=>assert_equals( act = lines( cut->server_check_nfe_t ) exp = 2 ).
 
 
     CLEAR: cut->server_check_nfe-svc_rs_active, cut->server_check_nfe-svc_sp_active, cut->server_check_nfe-svc_active.
@@ -286,7 +283,6 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_rs_active exp = ' ' ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_sp_active exp = ' ' ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_active    exp = 'X' ).
-    cl_abap_unit_assert=>assert_equals( act = lines( cut->server_check_nfe_t ) exp = 3 ).
 
 
     CLEAR: cut->server_check_nfe-svc_rs_active, cut->server_check_nfe-svc_sp_active, cut->server_check_nfe-svc_active.
@@ -295,7 +291,6 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_rs_active exp = ' ' ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_sp_active exp = ' ' ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_nfe-svc_active    exp = ' ' ).
-    cl_abap_unit_assert=>assert_equals( act = lines( cut->server_check_nfe_t ) exp = 4 ).
 
 
     cut->server->set_contingency_date( '24042025' ).
@@ -307,21 +302,17 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
   METHOD test_dfe_active_server.
     CREATE: OBJECT cut->server, OBJECT cut->branch_address.
     cut->server->set_active_server( 'SVC' ).
-    cl_abap_unit_assert=>assert_equals( act = lines( cut->server_check_dfe_t ) exp = 0 ).
-
 
     CLEAR: cut->server_check_dfe-active_service.
     cut->branch_address->set_regio( 'AP' ).
     cut->dfe_active_server( ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_dfe-active_service exp = /s4tax/dfe_constants=>svc_code_sap-rs ).
-    cl_abap_unit_assert=>assert_equals( act = lines( cut->server_check_dfe_t ) exp = 1 ).
 
 
     CLEAR: cut->server_check_dfe-active_service.
     cut->branch_address->set_regio( 'BR' ).
     cut->dfe_active_server( ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_dfe-active_service exp = /s4tax/dfe_constants=>svc_code_sap-sp ).
-    cl_abap_unit_assert=>assert_equals( act = lines( cut->server_check_dfe_t ) exp = 2 ).
 
 
     CLEAR: cut->server_check_dfe-active_service.
@@ -329,7 +320,6 @@ CLASS ltcl_contingency_integration IMPLEMENTATION.
     cut->branch_address->set_regio( 'SP' ).
     cut->dfe_active_server( ).
     cl_abap_unit_assert=>assert_equals( act = cut->server_check_dfe-active_service exp = '' ).
-    cl_abap_unit_assert=>assert_equals( act = lines( cut->server_check_dfe_t ) exp = 3 ).
 
 
     cut->server->set_contingency_date( '24042025' ).

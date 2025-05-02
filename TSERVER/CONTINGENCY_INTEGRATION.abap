@@ -43,8 +43,8 @@ CLASS /s4tax/contingency_integration DEFINITION PUBLIC CREATE PUBLIC.
     METHODS:
       constructor IMPORTING cs_branch_info TYPE j_1bnfe_branch_info OPTIONAL,
       main IMPORTING is_main_branch_info   TYPE j_1bnfe_branch_info OPTIONAL
-           EXPORTING ot_server_check_nfe_t TYPE tt_nfe_server_check
-                     ot_server_check_dfe_t TYPE tt_dfe_server_check .
+           CHANGING  ot_server_check_nfe_t TYPE tt_nfe_server_check OPTIONAL
+                     ot_server_check_dfe_t TYPE tt_dfe_server_check OPTIONAL.
 
     METHODS:
       load_branch_information,
@@ -55,7 +55,8 @@ CLASS /s4tax/contingency_integration DEFINITION PUBLIC CREATE PUBLIC.
 
       initialize_dao_and_server,
       read_dfe_cfg_list,
-      timestamp_cfg,
+      get_timestamp_now,
+      get_timestamp_server,
 
       nfe_active_server,
       dfe_active_server,
@@ -112,9 +113,8 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD contingency_read.
-    CREATE OBJECT ME->dfe_std.
-    dfe_std->j_1b_nfe_contingency_read( EXPORTING land1       = branch_address->struct-land1
-                                                  regio       = branch_address->struct-regio
+    dfe_std->j_1b_nfe_contingency_read( EXPORTING land1       = me->branch_address->struct-land1
+                                                  regio       = me->branch_address->struct-regio
                                                   bukrs       = me->branch_info-bukrs
                                                   branch      = me->branch_info-branch
                                                   model       = me->branch_info-model
@@ -126,12 +126,12 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
     date = /s4tax/date=>create_utc_now( ).
     date = date->to_timezone( sy-zonlo ).
 
-    server_check_nfe-regio = me->branch_info-regio.
-    server_check_nfe-tpamb = cust3-tpamb.
-    server_check_nfe-version   = cust3-version.
-    server_check_nfe-checktmpl = date->to_timestamp( ).
+    server_check_nfe-regio        = me->branch_info-regio.
+    server_check_nfe-tpamb        = me->cust3-tpamb.
+    server_check_nfe-version      = me->cust3-version.
+    server_check_nfe-checktmpl    = me->date->to_timestamp( ).
     server_check_nfe-sefaz_active = 'X'.
-    server_check_nfe-scan_active = ''.
+    server_check_nfe-scan_active  = ''.
   ENDMETHOD.
 
   METHOD dfe_server_check.
@@ -139,11 +139,11 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
     date = date->to_timezone( sy-zonlo ).
 
     server_check_dfe-cnpj           = me->branch_info-bukrs.
-    server_check_dfe-tpamb          = cust3-tpamb.
-    server_check_dfe-version        = cust3-version.
-    server_check_dfe-checktmpl      = date->to_timestamp( ).
-    server_check_dfe-active_service = /s4tax/dfe_constants=>svc_code_sap-sefaz.
+    server_check_dfe-tpamb          = me->cust3-tpamb.
+    server_check_dfe-version        = me->cust3-version.
+    server_check_dfe-checktmpl      = me->date->to_timestamp( ).
     server_check_dfe-model          = me->branch_info-model.
+    server_check_dfe-active_service = /s4tax/dfe_constants=>svc_code_sap-sefaz.
   ENDMETHOD.
 
   METHOD initialize_dao_and_server.
@@ -160,10 +160,6 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD read_dfe_cfg_list.
-    IF dfe_cfg_list IS INITIAL.
-      EXIT.
-    ENDIF.
-
     READ TABLE dfe_cfg_list INTO dfe_cfg INDEX 1.
     IF sy-subrc <> 0.
       EXIT.
@@ -174,10 +170,12 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-  METHOD timestamp_cfg.
+  METHOD get_timestamp_now.
     CREATE OBJECT today_date EXPORTING date = sy-datum time = sy-timlo.
     timestamp_now = today_date->to_timestamp( ).
+  ENDMETHOD.
 
+  METHOD get_timestamp_server.
     status_update_time = dfe_cfg->get_status_update_time( ).
     contingency_date = server->get_contingency_date( ).
     timestamp_server = today_date->to_time_timestamp( time = status_update_time timestamp = contingency_date ).
@@ -196,9 +194,7 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
         WHEN OTHERS.
       ENDCASE.
     ENDIF.
-
     server_check_nfe-checktmpl = server->struct-contingency_date.
-    APPEND server_check_nfe TO server_check_nfe_t.
   ENDMETHOD.
 
   METHOD dfe_active_server.
@@ -212,9 +208,7 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
           server_check_dfe-active_service = /s4tax/dfe_constants=>svc_code_sap-sp.
       ENDCASE.
     ENDIF.
-
     server_check_dfe-checktmpl = server->struct-contingency_date.
-    APPEND server_check_dfe TO server_check_dfe_t.
   ENDMETHOD.
 
   METHOD nfe_integration.
@@ -243,38 +237,45 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
     IF is_main_branch_info IS NOT INITIAL.
       me->branch_info = is_main_branch_info.
     ENDIF.
+    DATA: document_type TYPE i.
+    document_type = me->branch_info-model.
 
     load_branch_information( ).
     contingency_read( ).
 
-    CASE me->branch_info-model.
+    CASE document_type.
       WHEN '55'. nfe_server_check( ).
       WHEN '57'. dfe_server_check( ).
     ENDCASE.
 
     initialize_dao_and_server( ).
-    read_dfe_cfg_list( ).
-    timestamp_cfg( ).
 
-    IF ls_set_cont IS NOT INITIAL AND dfe_cfg IS BOUND.
-      IF timestamp_now <= timestamp_server AND server IS BOUND.
-        CASE me->branch_info-model.
-          WHEN '55'. nfe_active_server( ).
-          WHEN '57'. dfe_active_server( ).
-        ENDCASE.
-        EXIT.
+    IF me->ls_set_cont IS NOT INITIAL AND me->dfe_cfg_list IS NOT INITIAL.
+      me->read_dfe_cfg_list( ).
+      me->get_timestamp_now( ).
+
+      IF me->server IS BOUND.
+        me->get_timestamp_server( ).
+        IF timestamp_now <= timestamp_server.
+          CASE document_type.
+            WHEN '55'.
+              nfe_active_server( ).
+              APPEND server_check_nfe TO server_check_nfe_t.
+            WHEN '57'.
+              dfe_active_server( ).
+              APPEND server_check_dfe TO server_check_dfe_t.
+          ENDCASE.
+          EXIT.
+        ENDIF.
       ENDIF.
 
-      CASE me->branch_info-model.
+      CASE document_type.
         WHEN '55'. nfe_integration( ).
         WHEN '57'. dfe_integration( ).
       ENDCASE.
-
-      server->set_contingency_date( contingency_date ).
-      server->set_regio( branch_address->struct-regio ).
     ENDIF.
 
-    CASE me->branch_info-model.
+    CASE document_type.
       WHEN '55'. APPEND server_check_nfe TO server_check_nfe_t.
       WHEN '57'. APPEND server_check_dfe TO server_check_dfe_t.
     ENDCASE.
@@ -283,65 +284,3 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
   ENDMETHOD.
 
 ENDCLASS.
-
-**********************************************************************
-* MAIN BODY FOR /S4TAX/I01_NFE_CHECK_ACT_SERV
-*********************************************************************
-*
-*    DATA: ctg_int            TYPE REF TO /s4tax/contingency_integration,
-*          server_check_nfe_t TYPE TABLE OF j_1bnfe_server_check.
-*    CREATE OBJECT ctg_int.
-*
-*    ctg_int->load_branch_information( ).
-*    ctg_int->contingency_read( ).
-*    ctg_int->nfe_server_check( ).
-*    ctg_int->initialize_dao_and_server( ).
-*    ctg_int->read_dfe_cfg_list( ).
-*    ctg_int->timestamp_cfg( ).
-*
-*    IF ls_set_cont IS NOT INITIAL AND dfe_cfg IS BOUND.
-*
-*      IF timestamp_now <= timestamp_server AND server IS BOUND.
-*        ctg_int->nfe_active_server( CHANGING server_check_nfe_t = server_check_nfe_t ).
-*        EXIT.
-*      ENDIF.
-*
-*      ctg_int->nfe_integration( ).
-*      server->set_contingency_date( contingency_date ).
-*      server->set_regio( branch_address->struct-regio ).
-*
-*    ENDIF.
-*
-*    APPEND server_check_nfe TO server_check_nfe_t.
-*    EXIT.
-*
-**********************************************************************
-* MAIN BODY FOR /S4TAX/I01_DFE_CHECK_ACT_SERV
-**********************************************************************
-*
-*    DATA: ctg_int            TYPE REF TO /s4tax/contingency_integration,
-*          server_check_dfe_t TYPE TABLE OF j_1bdfe_server_check.
-*    CREATE OBJECT ctg_int.
-*
-*    ctg_int->load_branch_information( ).
-*    ctg_int->contingency_read( ).
-*    ctg_int->dfe_server_check( ).
-*    ctg_int->initialize_dao_and_server( ).
-*    ctg_int->read_dfe_cfg_list( ).
-*    ctg_int->timestamp_cfg( ).
-*
-*    IF ls_set_cont IS NOT INITIAL AND dfe_cfg IS BOUND.
-*
-*      IF timestamp_now <= timestamp_server AND server IS BOUND.
-*        ctg_int->dfe_active_server( CHANGING server_check_dfe_t = server_check_dfe_t ).
-*        EXIT.
-*      ENDIF.
-*
-*      ctg_int->dfe_integration( ).
-*      server->set_contingency_date( contingency_date ).
-*      server->set_regio( branch_address->struct-regio ).
-*
-*    ENDIF.
-*
-*    APPEND server_check_dfe TO server_check_dfe_t.
-*    EXIT.
