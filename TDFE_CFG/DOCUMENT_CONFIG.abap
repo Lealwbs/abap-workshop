@@ -12,7 +12,6 @@ CLASS /s4tax/document_config DEFINITION
 ENDCLASS.
 
 
-
 CLASS /s4tax/document_config IMPLEMENTATION.
   METHOD constructor.
 
@@ -22,10 +21,15 @@ CLASS /s4tax/document_config IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    me->set_start_operation( start_op = iw_struct-start_operation ).
-    me->set_job_ex_type( type = iw_struct-job_ex_type ).
+    me->set_start_operation( iw_struct-start_operation ).
+    me->set_job_ex_type( iw_struct-job_ex_type ).
     me->set_status_update_time( iw_struct-status_update_time ).
+    me->set_grc_destination( iw_struct-grc_destination ).
+    me->set_save_xml( iw_struct-save_xml ).
+    me->set_source_text( iw_struct-source_text ).
 
   ENDMETHOD.
-
 ENDCLASS.
+
+
+

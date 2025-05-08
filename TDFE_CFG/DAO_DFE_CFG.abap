@@ -58,6 +58,9 @@ CLASS /s4tax/dao_dfe_cfg IMPLEMENTATION.
     dfe_config-start_operation = dfe_cfg->get_start_operation( ).
     dfe_config-job_ex_type = dfe_cfg->get_job_ex_type( ).
     dfe_config-status_update_time = dfe_cfg->get_status_update_time( ).
+    dfe_config-grc_destination = dfe_cfg->get_status_update_time( ).
+    dfe_config-save_xml = dfe_cfg->get_save_xml( ).
+    dfe_config-source_text = dfe_cfg->get_source_text( ).
 
     MODIFY /s4tax/tdfe_cfg FROM dfe_config.
 
