@@ -109,7 +109,7 @@ CLASS /s4tax/cl_badi_nfse IMPLEMENTATION.
     me->reporter = reporter.
     IF me->reporter IS NOT BOUND.
 
-      me->reporter = /s4tax/reporter_factory=>create( object = /s4tax/reporter_factory=>object-s4tax
+      me->reporter = /s4tax/reporter_factory=>create( object    = /s4tax/reporter_factory=>object-s4tax
                                                       subobject = /s4tax/reporter_factory=>subobject-docs ).
     ENDIF.
 
@@ -139,9 +139,9 @@ CLASS /s4tax/cl_badi_nfse IMPLEMENTATION.
     DATA: is_sent    TYPE abap_bool,
           send_email TYPE abap_bool.
 
-    me->/s4tax/if_badi_nfse~nfse_send_email( EXPORTING documents = documents
-                                                check_email_type = abap_true
-                                              CHANGING result = is_sent  ).
+    me->/s4tax/if_badi_nfse~nfse_send_email( EXPORTING documents        = documents
+                                                       check_email_type = abap_true
+                                             CHANGING  result           = is_sent ).
 
 
   ENDMETHOD.
@@ -440,7 +440,7 @@ CLASS /s4tax/cl_badi_nfse IMPLEMENTATION.
     DATA: dfe_std TYPE REF TO /s4tax/dfe_std.
 
     dfe_std = /s4tax/dfe_std=>get_instance( ).
-    result = dfe_std->j_1b_nf_document_cancel( doc_number = item->struct-docnum ref_type = ref_type  ref_key = ref_key ).
+    result = dfe_std->j_1b_nf_document_cancel( doc_number = item->struct-docnum ref_type = ref_type ref_key = ref_key ).
 
   ENDMETHOD.
 
@@ -513,66 +513,76 @@ CLASS /s4tax/cl_badi_nfse IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD /s4tax/if_badi_nfse~save_docs_standard.
-*  *save_doc( )
 * substituir o codigo atual pelo do metodo "save_doc" para a implementação do cliente em clientes aonde a tabela de textos for a LOGBR e nao a FTX.
 
-    DATA: doc_partner    TYPE ty_j_1bnfnad,
-          doc_item       TYPE j_1bnflin_tab,
-          doc_item_tax   TYPE j_1bnfstx_tab,
-          doc_header_msg TYPE j_1bnfftx_tab,
-          doc_refer_msg  TYPE j_1bnfref_tab,
-          doc_header     TYPE j_1bnfdoc,
-          dfe_std        TYPE REF TO /s4tax/dfe_std.
+    CONSTANTS: c_ftx   TYPE i VALUE 1,
+               c_logbr TYPE i VALUE 2.
 
-    IF doc->struct IS INITIAL.
-      RETURN.
+    DATA: source_text TYPE /s4tax/e_source_text.
+    source_text = 1. "Precisa de Implementação
+
+    IF source_text EQ c_logbr.
+      "save_doc( ).
+
+    ELSE. "source_text = c_ftx
+      DATA: doc_partner    TYPE ty_j_1bnfnad,
+            doc_item       TYPE j_1bnflin_tab,
+            doc_item_tax   TYPE j_1bnfstx_tab,
+            doc_header_msg TYPE j_1bnfftx_tab,
+            doc_refer_msg  TYPE j_1bnfref_tab,
+            doc_header     TYPE j_1bnfdoc,
+            dfe_std        TYPE REF TO /s4tax/dfe_std.
+
+      IF doc->struct IS INITIAL.
+        RETURN.
+      ENDIF.
+
+      dfe_std = /s4tax/dfe_std=>get_instance( ).
+      dfe_std->j_1b_nf_document_read(
+        EXPORTING
+          doc_number         = doc->struct-docnum
+        IMPORTING
+          doc_header         = doc_header
+          doc_partner        = doc_partner
+          doc_item           = doc_item
+          doc_item_tax       = doc_item_tax
+          doc_header_msg     = doc_header_msg
+          doc_refer_msg      = doc_refer_msg
+        EXCEPTIONS
+          document_not_found = 1
+          docum_lock         = 2
+          partner_blocked    = 3
+          OTHERS             = 4 ).
+
+      IF sy-subrc <> 0.
+        reporter->error( ).
+        RETURN.
+      ENDIF.
+
+      MOVE-CORRESPONDING doc->struct TO doc_header.
+
+      dfe_std->j_1b_nf_document_update(
+        EXPORTING
+          doc_number            = doc_header-docnum
+          doc_header            = doc_header
+          doc_partner           = doc_partner
+          doc_item              = doc_item
+          doc_item_tax          = doc_item_tax
+          doc_header_msg        = doc_header_msg
+          doc_refer_msg         = doc_refer_msg
+        EXCEPTIONS
+          document_not_found    = 1
+          update_problem        = 2
+          doc_number_is_initial = 3
+          OTHERS                = 4
+      ).
+      IF sy-subrc <> 0.
+        reporter->error( ).
+      ENDIF.
+
+      COMMIT WORK.
+
     ENDIF.
-
-    dfe_std = /s4tax/dfe_std=>get_instance( ).
-    dfe_std->j_1b_nf_document_read(
-      EXPORTING
-        doc_number         = doc->struct-docnum
-      IMPORTING
-        doc_header         = doc_header
-        doc_partner        = doc_partner
-        doc_item           = doc_item
-        doc_item_tax       = doc_item_tax
-        doc_header_msg     = doc_header_msg
-        doc_refer_msg      = doc_refer_msg
-      EXCEPTIONS
-        document_not_found = 1
-        docum_lock         = 2
-        partner_blocked    = 3
-        OTHERS             = 4 ).
-
-    IF sy-subrc <> 0.
-      reporter->error( ).
-      RETURN.
-    ENDIF.
-
-    MOVE-CORRESPONDING doc->struct TO doc_header.
-
-    dfe_std->j_1b_nf_document_update(
-      EXPORTING
-        doc_number            = doc_header-docnum
-        doc_header            = doc_header
-        doc_partner           = doc_partner
-        doc_item              = doc_item
-        doc_item_tax          = doc_item_tax
-        doc_header_msg        = doc_header_msg
-        doc_refer_msg         = doc_refer_msg
-      EXCEPTIONS
-        document_not_found    = 1
-        update_problem        = 2
-        doc_number_is_initial = 3
-        OTHERS                = 4
-    ).
-    IF sy-subrc <> 0.
-      reporter->error( ).
-    ENDIF.
-
-    COMMIT WORK.
-
   ENDMETHOD.
 
   METHOD fill_texts.
