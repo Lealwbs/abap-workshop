@@ -518,13 +518,22 @@ CLASS /s4tax/cl_badi_nfse IMPLEMENTATION.
     CONSTANTS: c_ftx   TYPE i VALUE 1,
                c_logbr TYPE i VALUE 2.
 
+    DATA: dfe_cfg_obj TYPE REF TO /s4tax/dao_dfe_cfg.
+    DATA: dao_dfe_cfg TYPE REF TO /s4tax/document_config.
+    CREATE OBJECT dfe_cfg_obj.
+    dao_dfe_cfg = dfe_cfg_obj->/s4tax/idao_dfe_cfg~get_first(  ).
+
+    DATA: dfe_cfg_source_text type /s4tax/e_source_text.
+    dfe_cfg_source_text = dao_dfe_cfg->get_source_text(  ).
+
     DATA: source_text TYPE /s4tax/e_source_text.
     source_text = 1. "Precisa de Implementação
+    source_text = dfe_cfg_source_text. "Implementação Precisa de Testes
 
     IF source_text EQ c_logbr.
-      "save_doc( ).
+      "save_doc( ).     "QUANDO TERMINAR A TAREFA GERAR UM CARD NOVO
 
-    ELSE. "source_text = c_ftx
+    ELSE. "source_text = c_ftx or source_text IS INITIAL
       DATA: doc_partner    TYPE ty_j_1bnfnad,
             doc_item       TYPE j_1bnflin_tab,
             doc_item_tax   TYPE j_1bnfstx_tab,
