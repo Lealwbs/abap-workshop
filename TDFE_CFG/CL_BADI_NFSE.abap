@@ -8,6 +8,10 @@ CLASS /s4tax/cl_badi_nfse DEFINITION
     INTERFACES if_badi_interface .
     INTERFACES /s4tax/if_badi_nfse .
 
+    CONSTANTS: c_ftx   TYPE i VALUE 1,
+               c_logbr TYPE i VALUE 2.
+
+
     METHODS:
       constructor IMPORTING reporter       TYPE REF TO /s4tax/ireporter OPTIONAL
                             danfe_manager  TYPE REF TO /s4tax/if_danfe_manager OPTIONAL
@@ -28,7 +32,9 @@ CLASS /s4tax/cl_badi_nfse DEFINITION
       email_data        TYPE REF TO /s4tax/email_data,
       danfe_manager     TYPE REF TO /s4tax/if_danfe_manager,
       go_badi_nfse      TYPE REF TO /s4tax/badi_nfse,
-      nfse_processor    TYPE REF TO /s4tax/infse_processor.
+      nfse_processor    TYPE REF TO /s4tax/infse_processor,
+      dfe_cfg_obj       TYPE REF TO /s4tax/dao_dfe_cfg,
+      dao_dfe_cfg       TYPE REF TO /s4tax/document_config.
 
     METHODS:
       create_email_nfse IMPORTING danfe_generator TYPE REF TO /s4tax/idanfe_generator
@@ -132,6 +138,9 @@ CLASS /s4tax/cl_badi_nfse IMPLEMENTATION.
     "me->dfe_email_cfg = dao_email_cfg->get( /s4tax/constants=>package_name-nfse ).
     range = /s4tax/range_utils=>simple_range( /s4tax/constants=>package_name-nfse ).
     me->dfe_email_cfg_t = dao_email_cfg->get_many( package_list = range ).
+    
+    CREATE OBJECT dfe_cfg_obj.
+    dao_dfe_cfg = dfe_cfg_obj->/s4tax/idao_dfe_cfg~get_first(  ).
 
   ENDMETHOD.
 
@@ -515,25 +524,13 @@ CLASS /s4tax/cl_badi_nfse IMPLEMENTATION.
   METHOD /s4tax/if_badi_nfse~save_docs_standard.
 * substituir o codigo atual pelo do metodo "save_doc" para a implementação do cliente em clientes aonde a tabela de textos for a LOGBR e nao a FTX.
 
-    CONSTANTS: c_ftx   TYPE i VALUE 1,
-               c_logbr TYPE i VALUE 2.
-
-    DATA: dfe_cfg_obj TYPE REF TO /s4tax/dao_dfe_cfg.
-    DATA: dao_dfe_cfg TYPE REF TO /s4tax/document_config.
-    CREATE OBJECT dfe_cfg_obj.
-    dao_dfe_cfg = dfe_cfg_obj->/s4tax/idao_dfe_cfg~get_first(  ).
-
-    DATA: dfe_cfg_source_text type /s4tax/e_source_text.
-    dfe_cfg_source_text = dao_dfe_cfg->get_source_text(  ).
-
     DATA: source_text TYPE /s4tax/e_source_text.
-    source_text = 1. "Precisa de Implementação
-    source_text = dfe_cfg_source_text. "Implementação Precisa de Testes
+    source_text = dao_dfe_cfg->get_source_text(  ). "Implementação Precisa de Testes
 
-    IF source_text EQ c_logbr.
-      "save_doc( ).     "QUANDO TERMINAR A TAREFA GERAR UM CARD NOVO
+    IF source_text EQ c_logbr. "(c_logbr TYPE i VALUE 2)
+      "save_doc( ). "QUANDO TERMINAR A TAREFA GERAR UM CARD NOVO
 
-    ELSE. "source_text = c_ftx or source_text IS INITIAL
+    ELSE. "(c_ftx TYPE i VALUE 1) OR (source_text IS INITIAL)
       DATA: doc_partner    TYPE ty_j_1bnfnad,
             doc_item       TYPE j_1bnflin_tab,
             doc_item_tax   TYPE j_1bnfstx_tab,
