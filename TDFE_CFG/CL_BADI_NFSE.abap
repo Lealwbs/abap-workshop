@@ -8,10 +8,6 @@ CLASS /s4tax/cl_badi_nfse DEFINITION
     INTERFACES if_badi_interface .
     INTERFACES /s4tax/if_badi_nfse .
 
-    CONSTANTS: c_ftx   TYPE i VALUE 1,
-               c_logbr TYPE i VALUE 2.
-
-
     METHODS:
       constructor IMPORTING reporter       TYPE REF TO /s4tax/ireporter OPTIONAL
                             danfe_manager  TYPE REF TO /s4tax/if_danfe_manager OPTIONAL
@@ -138,7 +134,7 @@ CLASS /s4tax/cl_badi_nfse IMPLEMENTATION.
     "me->dfe_email_cfg = dao_email_cfg->get( /s4tax/constants=>package_name-nfse ).
     range = /s4tax/range_utils=>simple_range( /s4tax/constants=>package_name-nfse ).
     me->dfe_email_cfg_t = dao_email_cfg->get_many( package_list = range ).
-    
+
     CREATE OBJECT dfe_cfg_obj.
     dao_dfe_cfg = dfe_cfg_obj->/s4tax/idao_dfe_cfg~get_first(  ).
 
@@ -522,15 +518,14 @@ CLASS /s4tax/cl_badi_nfse IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD /s4tax/if_badi_nfse~save_docs_standard.
-* substituir o codigo atual pelo do metodo "save_doc" para a implementação do cliente em clientes aonde a tabela de textos for a LOGBR e nao a FTX.
 
     DATA: source_text TYPE /s4tax/e_source_text.
-    source_text = dao_dfe_cfg->get_source_text(  ). "Implementação Precisa de Testes
+    source_text = dao_dfe_cfg->get_source_text(  ).
 
-    IF source_text EQ c_logbr. "(c_logbr TYPE i VALUE 2)
-      "save_doc( ). "QUANDO TERMINAR A TAREFA GERAR UM CARD NOVO
+    IF source_text EQ /s4tax/dfe_constants=>source_text-logbr.
+      "save_doc( ).
 
-    ELSE. "(c_ftx TYPE i VALUE 1) OR (source_text IS INITIAL)
+    ELSE.
       DATA: doc_partner    TYPE ty_j_1bnfnad,
             doc_item       TYPE j_1bnflin_tab,
             doc_item_tax   TYPE j_1bnfstx_tab,

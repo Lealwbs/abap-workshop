@@ -25,8 +25,8 @@ CLASS /s4tax/document_config IMPLEMENTATION.
     me->set_job_ex_type( iw_struct-job_ex_type ).
     me->set_status_update_time( iw_struct-status_update_time ).
     me->set_grc_destination( iw_struct-grc_destination ).
-    me->set_save_xml( iw_struct-save_xml ).
     me->set_source_text( iw_struct-source_text ).
+    me->set_save_xml( iw_struct-save_xml ).
 
   ENDMETHOD.
 ENDCLASS.

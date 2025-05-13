@@ -4,7 +4,9 @@ INTERFACE /s4tax/idao_dfe_cfg
 
     delete IMPORTING start_operation TYPE /s4tax/e_start_operation,
 
-    get_all RETURNING VALUE(result)  TYPE /s4tax/document_config_t,
+    get_first RETURNING VALUE(result) TYPE REF TO /s4tax/document_config,
+
+    get_all RETURNING VALUE(result) TYPE /s4tax/document_config_t,
 
     get_by_start_operation IMPORTING start_operation TYPE /s4tax/e_start_operation
                            RETURNING VALUE(result)   TYPE REF TO /s4tax/document_config,

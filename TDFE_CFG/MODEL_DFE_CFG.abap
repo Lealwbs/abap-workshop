@@ -13,10 +13,10 @@ CLASS /s4tax/model_dfe_cfg DEFINITION
       set_status_update_time IMPORTING iv_status_update_time TYPE /s4tax/tdfe_cfg-status_update_time,
       get_grc_destination RETURNING VALUE(result) TYPE /s4tax/tdfe_cfg-grc_destination,
       set_grc_destination IMPORTING iv_grc_destination TYPE /s4tax/tdfe_cfg-grc_destination,
-      get_save_xml RETURNING VALUE(result) TYPE /s4tax/tdfe_cfg-save_xml,
-      set_save_xml IMPORTING iv_save_xml TYPE /s4tax/tdfe_cfg-save_xml,
       get_source_text RETURNING VALUE(result) TYPE /s4tax/tdfe_cfg-source_text,
-      set_source_text IMPORTING iv_source_text TYPE /s4tax/tdfe_cfg-source_text.
+      set_source_text IMPORTING iv_source_text TYPE /s4tax/tdfe_cfg-source_text,
+      get_save_xml RETURNING VALUE(result) TYPE /s4tax/tdfe_cfg-save_xml,
+      set_save_xml IMPORTING iv_save_xml TYPE /s4tax/tdfe_cfg-save_xml.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -57,20 +57,20 @@ CLASS /s4tax/model_dfe_cfg IMPLEMENTATION.
     me->struct-grc_destination = iv_grc_destination.
   ENDMETHOD.
 
-  METHOD get_save_xml.
-    result = me->struct-save_xml.
-  ENDMETHOD.
-
-  METHOD set_save_xml.
-    me->struct-save_xml = iv_save_xml.
-  ENDMETHOD.
-
   METHOD get_source_text.
     result = me->struct-source_text.
   ENDMETHOD.
 
   METHOD set_source_text.
     me->struct-source_text = iv_source_text.
+  ENDMETHOD.
+
+  METHOD get_save_xml.
+    result = me->struct-save_xml.
+  ENDMETHOD.
+
+  METHOD set_save_xml.
+    me->struct-save_xml = iv_save_xml.
   ENDMETHOD.
 
 ENDCLASS.

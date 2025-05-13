@@ -21,6 +21,21 @@ CLASS /s4tax/dao_dfe_cfg IMPLEMENTATION.
     DELETE FROM /s4tax/tdfe_cfg WHERE start_operation = start_operation.
   ENDMETHOD.
 
+  METHOD /s4tax/idao_dfe_cfg~get_first.
+    DATA: dfe_cfg TYPE /s4tax/tdfe_cfg_t,
+          dfe_cfg_first_obj TYPE REF TO /s4tax/document_config.
+
+    SELECT * FROM /s4tax/tdfe_cfg INTO TABLE dfe_cfg UP TO 1 ROWS.
+
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    CREATE OBJECT dfe_cfg_first_obj EXPORTING iw_struct = dfe_cfg[ 1 ].
+
+    result = dfe_cfg_first_obj.
+  ENDMETHOD.
+
   METHOD /s4tax/idao_dfe_cfg~get_all.
     DATA: dfe_cfg TYPE /s4tax/tdfe_cfg_t.
 
@@ -59,8 +74,8 @@ CLASS /s4tax/dao_dfe_cfg IMPLEMENTATION.
     dfe_config-job_ex_type = dfe_cfg->get_job_ex_type( ).
     dfe_config-status_update_time = dfe_cfg->get_status_update_time( ).
     dfe_config-grc_destination = dfe_cfg->get_status_update_time( ).
-    dfe_config-save_xml = dfe_cfg->get_save_xml( ).
     dfe_config-source_text = dfe_cfg->get_source_text( ).
+    dfe_config-save_xml = dfe_cfg->get_save_xml( ).
 
     MODIFY /s4tax/tdfe_cfg FROM dfe_config.
 

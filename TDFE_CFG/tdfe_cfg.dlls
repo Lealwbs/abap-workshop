@@ -9,7 +9,7 @@ define table /s4tax/tdfe_cfg {
   job_ex_type         : /s4tax/e_dfe_job_cfg;
   status_update_time  : /s4tax/update_time;
   grc_destination     : /s4tax/e_rfc_destination;
-  save_xml            : boolean;
   source_text         : /s4tax/e_source_text;
+  save_xml            : boolean;
 
 }
