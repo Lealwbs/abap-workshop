@@ -113,11 +113,10 @@ CLASS ltcl_cl_badi_nfse DEFINITION FINAL FOR TESTING
                 mock_danfe_generator TYPE REF TO /s4tax/idanfe_generator,
                 mock_danfe_maneger   TYPE REF TO /s4tax/if_danfe_manager,
                 mock_api_document    TYPE REF TO /s4tax/iapi_document,
-                mock_document        TYPE REF TO /s4tax/idao_document,
                 mock_nfse_processor  TYPE REF TO /s4tax/infse_processor,
                 mock_dao_email_cfg   TYPE REF TO /s4tax/idao_dfe_email_cfg,
-                mock_dao_dfe_cfg     TYPE REF TO /s4tax/idao_dfe_cfg,
-                mock_dfe_cfg         TYPE REF TO /s4tax/document_config.
+                mock_document        TYPE REF TO /s4tax/idao_document,
+                mock_dao_dfe_cfg     TYPE REF TO /s4tax/idao_dfe_cfg.
 
     METHODS:
       setup,
@@ -140,17 +139,15 @@ CLASS ltcl_cl_badi_nfse IMPLEMENTATION.
   METHOD setup.
     DATA: settings TYPE REF TO /s4tax/reporter_settings.
 
-    mock_danfe_generator    ?= cl_abap_testdouble=>create( interface_danfe_generator ).
-    mock_danfe_select       ?= cl_abap_testdouble=>create( interface_danfe_select ).
-    mock_reporter           ?= cl_abap_testdouble=>create( interface_reporter ).
-    mock_danfe_maneger      ?= cl_abap_testdouble=>create( interface_danfe_maneger ).
-    mock_api_document       ?= cl_abap_testdouble=>create( interface_api_document ).
-    mock_nfse_processor     ?= cl_abap_testdouble=>create( interface_nfse_processor ).
-    mock_document           ?= cl_abap_testdouble=>create( interface_document ).
-    mock_dao_email_cfg      ?= cl_abap_testdouble=>create( interface_dao_email_cfg ).
-
-    "TODO: Criar mock para dao_dfe_config *****
-    mock_dao_dfe_cfg        ?= cl_abap_testdouble=>create( interface_dao_dfe_cfg ).
+    mock_danfe_generator ?= cl_abap_testdouble=>create( interface_danfe_generator ).
+    mock_danfe_select    ?= cl_abap_testdouble=>create( interface_danfe_select ).
+    mock_reporter        ?= cl_abap_testdouble=>create( interface_reporter ).
+    mock_danfe_maneger   ?= cl_abap_testdouble=>create( interface_danfe_maneger ).
+    mock_api_document    ?= cl_abap_testdouble=>create( interface_api_document ).
+    mock_nfse_processor  ?= cl_abap_testdouble=>create( interface_nfse_processor ).
+    mock_document        ?= cl_abap_testdouble=>create( interface_document ).
+    mock_dao_email_cfg   ?= cl_abap_testdouble=>create( interface_dao_email_cfg ).
+    mock_dao_dfe_cfg     ?= cl_abap_testdouble=>create( interface_dao_dfe_cfg ).
 
     CREATE OBJECT settings.
     settings->/s4tax/ireporter_settings~set_autosave( i_auto_save = abap_false ).
@@ -191,6 +188,8 @@ CLASS ltcl_cl_badi_nfse IMPLEMENTATION.
     document->set_doc( doc ).
 
     doc = document->get_doc( ).
+
+    CREATE OBJECT dfe_cfg.
 
   ENDMETHOD.
 
@@ -236,25 +235,18 @@ CLASS ltcl_cl_badi_nfse IMPLEMENTATION.
     cl_abap_testdouble=>configure_call( mock_document )->returning( mock_dao_email_cfg )->ignore_all_parameters( ).
     mock_document->dfe_email_cfg( ).
 
-    "dfe_cfg
-    cl_abap_testdouble=>configure_call( mock_document )->returning( mock_dao_dfe_cfg )->ignore_all_parameters( ).
-    mock_document->dfe_cfg( ).
-
-    cl_abap_testdouble=>configure_call( mock_dao_dfe_cfg )->returning( mock_dfe_cfg )->ignore_all_parameters( ).
-    mock_dao_dfe_cfg->get_first( ).
-
-    "TODO: Configure a CALL para mock_dfe_cfg->get_first( ), retornando o valor que for necessário para seu teste.
-    "      Dica: se for testar os dois cenários: LOGBR e FTX, defina a variável de retorno na definição da classe,
-    "            altere o valor dela no método teste e tente chamar mock_configuration dentro deste método.
-    "            Se não for possível chamar o mock_configuration, crie um método de mock config próprio para o
-    "            mock_dao_dfe_cfg e chame dentro do método de teste.
-
     cl_abap_testdouble=>configure_call( mock_dao_email_cfg )->returning( dfe_email_cfg )->ignore_all_parameters( ).
     mock_dao_email_cfg->get( '' ).
 
     cl_abap_testdouble=>configure_call( mock_dao_email_cfg )->returning( dfe_email_cfg_t )->ignore_all_parameters( ).
     mock_dao_email_cfg->get_many( package_list = VALUE #( ) ).
 
+    "dfe_cfg
+    cl_abap_testdouble=>configure_call( mock_document )->returning( mock_dao_dfe_cfg )->ignore_all_parameters( ).
+    mock_document->dfe_cfg( ).
+
+    cl_abap_testdouble=>configure_call( mock_dao_dfe_cfg )->returning( dfe_cfg )->ignore_all_parameters( ).
+    mock_dao_dfe_cfg->get_first( ).
 
   ENDMETHOD.
 
@@ -388,25 +380,14 @@ CLASS ltcl_cl_badi_nfse IMPLEMENTATION.
 
   METHOD save_docs_standard.
 
-    DATA: reporter TYPE REF TO /s4tax/ireporter.
+    dfe_cfg->set_source_text( '1' ). "FTX
+    cut->/s4tax/if_badi_nfse~save_docs_standard( doc = me->doc reporter = mock_reporter ).
 
-    mock_dfe_cfg = NEW /s4tax/document_config(
-      iw_struct = VALUE /s4tax/tdfe_cfg(
-        start_operation    = '20250514'
-        job_ex_type        = '1'
-        status_update_time = '120500'
-        grc_destination    = 'test_value_grc_rfc'
-        save_xml           = 'X' )
-    ).
+    dfe_cfg->set_source_text( '2' ). "LOGBR
+    cut->/s4tax/if_badi_nfse~save_docs_standard( doc = me->doc reporter = mock_reporter ).
 
-    mock_dfe_cfg->set_source_text( '1' ). "FTX
-    mock_dfe_cfg->set_source_text( '2' ). "LOGBR
-
-    mock_configuration( ).
-    reporter = NEW /s4tax/reporter( ).
-
-    "TODO: Implementar este teste
-    "cut->/s4tax/if_badi_nfse~save_docs_standard( doc = doc reporter = reporter ).
+    "TODO: Implementar um cl_abap_unit_assert para validar a integridade do método.
+    "Até então foi conferido apenas se a lógica principal do método executa sem dar dump.
 
   ENDMETHOD.
 
