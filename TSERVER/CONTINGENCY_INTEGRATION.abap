@@ -1,44 +1,36 @@
 CLASS /s4tax/contingency_integration DEFINITION PUBLIC CREATE PUBLIC.
 
-
   PUBLIC SECTION.
-    DATA: was_return_forced TYPE abap_bool VALUE abap_false.
-
     TYPES: tt_nfe_server_check TYPE TABLE OF j_1bnfe_server_check,
            tt_dfe_server_check TYPE TABLE OF j_1bdfe_server_check.
 
     METHODS:
       constructor,
-      run_contingency_process CHANGING is_main_branch_info   TYPE j_1bnfe_branch_info
-                                       ot_server_check_nfe_t TYPE tt_nfe_server_check OPTIONAL
-                                       ot_server_check_dfe_t TYPE tt_dfe_server_check OPTIONAL.
+      run_contingency_process IMPORTING is_main_branch_info   TYPE j_1bnfe_branch_info
+                              CHANGING  ot_server_check_nfe_t TYPE tt_nfe_server_check OPTIONAL
+                                        ot_server_check_dfe_t TYPE tt_dfe_server_check OPTIONAL.
 
   PROTECTED SECTION.
     DATA: cust3                   TYPE j_1bnfe_cust3,
-          dao                     TYPE REF TO /s4tax/idao,
           dao_dfe_cfg             TYPE REF TO /s4tax/idao_dfe_cfg,
           dao_document            TYPE REF TO /s4tax/idao_document,
           dao_pack_model_business TYPE REF TO /s4tax/idao_pack_model_busines,
           dao_server              TYPE REF TO /s4tax/idao_server,
           dao_branch              TYPE REF TO /s4tax/idao_branch,
           dal_branch              TYPE REF TO /s4tax/idal_branch,
-          defaults                TYPE REF TO /s4tax/defaults,
           ls_set_cont             TYPE j_1bnfe_contin,
 
           server                  TYPE REF TO /s4tax/server,
           server_check_nfe        TYPE j_1bnfe_server_check,
           server_check_dfe        TYPE j_1bdfe_server_check,
-
-          dfe_intg                TYPE REF TO /s4tax/dfe_integration,
-          cte_intg                TYPE REF TO /s4tax/cte_integration,
           document_type           TYPE j_1bmodel,
 
-          branch_info             TYPE j_1bnfe_branch_info,
+          branch_info             TYPE j_1bnfe_branch_info, "
           branch                  TYPE REF TO /s4tax/branch,
           branch_address          TYPE REF TO /s4tax/address,
           dfe_std                 TYPE REF TO /s4tax/dfe_std,
           dfe_cfg                 TYPE REF TO /s4tax/document_config,
-          dfe_cfg_list            TYPE /s4tax/document_config_t,
+*          dfe_cfg_list            TYPE /s4tax/document_config_t,
 
           date                    TYPE REF TO /s4tax/date,
           timestamp_now           TYPE /s4tax/tserver-contingency_date,
@@ -63,12 +55,14 @@ CLASS /s4tax/contingency_integration DEFINITION PUBLIC CREATE PUBLIC.
       initialize_dao_and_server,
       get_timestamps,
 
-      update_svc_server_check_nfe IMPORTING case_item type /s4tax/authorizer,
-      update_svc_server_check_dfe IMPORTING case_item type regio,
+      update_svc_server_check_nfe IMPORTING case_item TYPE /s4tax/authorizer,
+      update_svc_server_check_dfe IMPORTING case_item TYPE regio,
 
-      run_check_active_server IMPORTING document_type TYPE j_1bmodel.
+      run_check_active_server.
 
   PRIVATE SECTION.
+    DATA: was_return_forced TYPE abap_bool VALUE abap_false.
+
     METHODS:
       save_svc IMPORTING output TYPE /s4tax/s_status_servico_o
                          regio  TYPE /s4tax/tserver-regio
@@ -87,9 +81,9 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
 
   METHOD load_branch_information.
     dfe_std = /s4tax/dfe_std=>get_instance( ).
-    dfe_std->j_1bnfe_cust3_read( EXPORTING bukrs  = me->branch_info-bukrs
-                                           branch = me->branch_info-branch
-                                           model  = me->branch_info-model
+    dfe_std->j_1bnfe_cust3_read( EXPORTING bukrs  = branch_info-bukrs
+                                           branch = branch_info-branch
+                                           model  = branch_info-model
                                  IMPORTING cust3  = cust3 ).
 
 * Check is not executed in following cases: 1) when no entry exists in customizing  2) automatic server determination is not active in customizing
@@ -102,8 +96,8 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
 
     dao_pack_model_business = /s4tax/dao_pack_model_business=>default_instance( ).
     dao_branch = dao_pack_model_business->branch( ).
-    branch = dao_branch->get( company_code = me->branch_info-bukrs
-                              branch_code  = me->branch_info-branch ).
+    branch = dao_branch->get( company_code = branch_info-bukrs
+                              branch_code  = branch_info-branch ).
 
     IF branch IS NOT BOUND.
       MESSAGE e005(/s4tax/dfe_integr) INTO msg.
@@ -123,23 +117,23 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    dfe_std->j_1b_nfe_contingency_read( EXPORTING land1       = me->branch_address->struct-land1
-                                                  regio       = me->branch_address->struct-regio
-                                                  bukrs       = me->branch_info-bukrs
-                                                  branch      = me->branch_info-branch
-                                                  model       = me->branch_info-model
+    dfe_std->j_1b_nfe_contingency_read( EXPORTING land1       = branch_address->struct-land1
+                                                  regio       = branch_address->struct-regio
+                                                  bukrs       = branch_info-bukrs
+                                                  branch      = branch_info-branch
+                                                  model       = branch_info-model
                                                   contin_type = '2'
-                                        IMPORTING es_set_cont = me->ls_set_cont ).
+                                        IMPORTING es_set_cont = ls_set_cont ).
   ENDMETHOD.
 
   METHOD mount_server_check_nfe.
     date = /s4tax/date=>create_utc_now( ).
     date = date->to_timezone( sy-zonlo ).
 
-    server_check_nfe-regio        = me->branch_info-regio.
-    server_check_nfe-tpamb        = me->cust3-tpamb.
-    server_check_nfe-version      = me->cust3-version.
-    server_check_nfe-checktmpl    = me->date->to_timestamp( ).
+    server_check_nfe-regio        = branch_info-regio.
+    server_check_nfe-tpamb        = cust3-tpamb.
+    server_check_nfe-version      = cust3-version.
+    server_check_nfe-checktmpl    = date->to_timestamp( ).
     server_check_nfe-sefaz_active = 'X'.
     server_check_nfe-scan_active  = ''.
   ENDMETHOD.
@@ -148,25 +142,21 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
     date = /s4tax/date=>create_utc_now( ).
     date = date->to_timezone( sy-zonlo ).
 
-    server_check_dfe-cnpj           = me->branch_info-bukrs.
-    server_check_dfe-tpamb          = me->cust3-tpamb.
-    server_check_dfe-version        = me->cust3-version.
-    server_check_dfe-checktmpl      = me->date->to_timestamp( ).
-    server_check_dfe-model          = me->branch_info-model.
+    server_check_dfe-cnpj           = branch_info-bukrs.
+    server_check_dfe-tpamb          = cust3-tpamb.
+    server_check_dfe-version        = cust3-version.
+    server_check_dfe-checktmpl      = date->to_timestamp( ).
+    server_check_dfe-model          = branch_info-model.
     server_check_dfe-active_service = /s4tax/dfe_constants=>svc_code_sap-sefaz.
   ENDMETHOD.
 
   METHOD initialize_dao_and_server.
-    dao_document = /s4tax/dao_document=>get_instance(  ).
-    dao_dfe_cfg  = dao_document->dfe_cfg(  ).
-    dfe_cfg_list = dao_dfe_cfg->get_all( ).
+    dao_document = /s4tax/dao_document=>get_instance( ).
+    dao_dfe_cfg  = dao_document->dfe_cfg( ).
+    dfe_cfg      = dao_dfe_cfg->get_first( ). "Antes era dfe_cfg_list = dao_dfe_cfg->get_all( ).
 
-    dao_server = /s4tax/dao_server=>get_instance(  ).
-    server     = dao_server->get(  ).
-
-    defaults      = /s4tax/defaults=>get_default_instance( ).
-    dao           = defaults->get_dao( ).
-    dao_document  = /s4tax/dao_document=>get_instance( ).
+    dao_server = /s4tax/dao_server=>get_instance( ).
+    server     = dao_server->get( ).
   ENDMETHOD.
 
   METHOD get_timestamps.
@@ -174,7 +164,7 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
     timestamp_now = today_date->to_timestamp( ).
 
     status_update_time = dfe_cfg->get_status_update_time( ).
-    contingency_date   = server->get_contingency_date( ).
+    contingency_date = server->get_contingency_date( ).
     timestamp_server = today_date->to_time_timestamp( time = status_update_time timestamp = contingency_date ).
   ENDMETHOD.
 
@@ -203,7 +193,9 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
 
   METHOD run_check_active_server. "Método adaptado de /S4TAX/DFE_INTEGRATION e /S4TAX/CTE_INTEGRATION
 
-    DATA: dao_branch_config TYPE REF TO /s4tax/idao_branch_config,
+    DATA: dao               TYPE REF TO /s4tax/idao,
+          defaults          TYPE REF TO /s4tax/defaults,
+          dao_branch_config TYPE REF TO /s4tax/idao_branch_config,
           branch_config     TYPE REF TO /s4tax/branch_config,
           consulta_input    TYPE /s4tax/s_status_servico_i,
           consulta_output   TYPE /s4tax/s_status_servico_o,
@@ -212,6 +204,10 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
           date              TYPE REF TO /s4tax/date,
           dfe_std           TYPE REF TO /s4tax/dfe_std,
           api_dfe           TYPE REF TO /s4tax/iapi_dfe.
+
+    dao_document = /s4tax/dao_document=>get_instance( ).
+    defaults = /s4tax/defaults=>get_default_instance( ).
+    dao = defaults->get_dao( ).
 
     TRY.
         api_dfe = /s4tax/api_dfe=>get_instance( ).
@@ -233,7 +229,7 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    consulta_input-branch_id    = branch_config->get_branch_id( ).
+    consulta_input-branch_id = branch_config->get_branch_id( ).
     consulta_input-contingencia = /s4tax/constants=>proposition-true.
 
     TRY.
@@ -265,15 +261,14 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
     IF ( consulta_output-main-active = abap_false AND consulta_output-svc-active = abap_true )
     OR ls_set_cont-cont_reason_reg = /s4tax/dfe_constants=>svc_reason-active.
 
+      CASE me->document_type.
 
-      CASE document_type.
-
-        WHEN '55'.
+        WHEN 55.
           DATA: tmp_authorizer TYPE /s4tax/tserver-authorizer.
           tmp_authorizer = consulta_output-svc-authorizer.
           update_svc_server_check_nfe( case_item = tmp_authorizer ).
 
-        WHEN '57'.
+        WHEN 57.
           update_svc_server_check_dfe( case_item = ls_set_cont-regio ).
 
       ENDCASE.
@@ -299,6 +294,7 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
     IF dao_server IS NOT BOUND.
       MESSAGE e009(/s4tax/dfe_integr) INTO msg.
       reporter->error( msg ).
+      was_return_forced = abap_true.
       RETURN.
     ENDIF.
 
@@ -331,6 +327,7 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
     IF server IS NOT BOUND.
       MESSAGE e010(/s4tax/dfe_integr) INTO msg.
       reporter->error( msg ).
+      was_return_forced = abap_true.
       RETURN.
     ENDIF.
 
@@ -339,9 +336,10 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
 
   METHOD run_contingency_process.
 
-    me->branch_info = is_main_branch_info.
+    branch_info   = is_main_branch_info.
     document_type = branch_info-model.
-    IF document_type <> '55' AND document_type <> '57'.
+
+    IF document_type <> 55 AND document_type <> 57.
       MESSAGE e007(/s4tax/dfe_integr) WITH branch_info-model INTO msg.
       reporter->error( msg ).
       RETURN.
@@ -353,49 +351,40 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
     ENDIF.
 
     CASE document_type.
-      WHEN '55'.
+      WHEN 55.
         mount_server_check_nfe( ).
-      WHEN '57'.
+      WHEN 57.
         mount_server_check_dfe( ).
     ENDCASE.
 
     initialize_dao_and_server( ).
 
-    IF ls_set_cont IS NOT INITIAL AND dfe_cfg_list IS NOT INITIAL.
+    IF ls_set_cont IS NOT INITIAL AND dfe_cfg IS BOUND. "Antes era: IF ls_set_cont IS NOT INITIAL AND dfe_cfg_list IS NOT INITIAL.
 
-      READ TABLE dfe_cfg_list INTO dfe_cfg INDEX 1.
-      IF sy-subrc <> 0 OR dfe_cfg IS NOT BOUND.
-        MESSAGE e008(/s4tax/dfe_integr) INTO msg.
-        reporter->error( msg ).
-        RETURN.
-      ENDIF.
-
-      IF me->server IS BOUND.
-
+      IF server IS BOUND.
         get_timestamps( ).
 
         IF timestamp_now <= timestamp_server.
           CASE document_type.
-            WHEN '55'.
+            WHEN 55.
               IF server->struct-active_server = 'SVC'.
                 update_svc_server_check_nfe( case_item = server->struct-authorizer ).
               ENDIF.
               server_check_nfe-checktmpl = server->struct-contingency_date.
-              APPEND server_check_nfe TO server_check_nfe_t.
+              APPEND server_check_nfe TO ot_server_check_nfe_t.
 
-            WHEN '57'.
+            WHEN 57.
               IF server->struct-active_server = 'SVC'.
                 update_svc_server_check_dfe( case_item = branch_address->struct-regio ).
               ENDIF.
               server_check_dfe-checktmpl = server->struct-contingency_date.
-              APPEND server_check_dfe TO server_check_dfe_t.
-
+              APPEND server_check_dfe TO ot_server_check_dfe_t.
           ENDCASE.
           RETURN.
         ENDIF.
       ENDIF.
 
-      run_check_active_server( document_type = document_type ).
+      run_check_active_server( ).
       IF was_return_forced = abap_true.
         RETURN.
       ENDIF.
@@ -403,10 +392,10 @@ CLASS /s4tax/contingency_integration IMPLEMENTATION.
     ENDIF.
 
     CASE document_type.
-      WHEN '55'.
-        APPEND server_check_nfe TO server_check_nfe_t.
-      WHEN '57'.
-        APPEND server_check_dfe TO server_check_dfe_t.
+      WHEN 55.
+        APPEND server_check_nfe TO ot_server_check_nfe_t.
+      WHEN 57.
+        APPEND server_check_dfe TO ot_server_check_dfe_t.
     ENDCASE.
 
   ENDMETHOD.
