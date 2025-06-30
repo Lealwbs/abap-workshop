@@ -1,9 +1,0 @@
-@EndUserText.label : 'Fiscal ids do parceiro'
-@AbapCatalog.enhancementCategory : #NOT_EXTENSIBLE
-define structure /s4tax/s_fiscal_ids {
-  id     : abap.string(0);
-  type   : abap.string(0);
-  value  : abap.string(0);
-  issuer : abap.string(0);
-
-}

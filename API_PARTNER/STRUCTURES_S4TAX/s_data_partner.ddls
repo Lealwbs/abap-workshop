@@ -1,6 +1,0 @@
-@EndUserText.label : 'Data Partner'
-@AbapCatalog.enhancementCategory : #NOT_EXTENSIBLE
-define structure /s4tax/s_data_partner {
-  partner : /s4tax/s_partner;
-
-}

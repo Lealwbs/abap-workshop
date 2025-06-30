@@ -1,6 +1,0 @@
-@EndUserText.label : 'Output for API Search a partner by ID'
-@AbapCatalog.enhancementCategory : #NOT_EXTENSIBLE
-define structure /s4tax/s_search_partner_o {
-  data : /s4tax/s_data_partner;
-
-}
